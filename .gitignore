@@ -53,6 +53,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+# MCP screenshot captures
+/[Aa]ssets/Screenshots/
+/[Aa]ssets/Screenshots.meta
+
 # OS generated
 .DS_Store
 Thumbs.db

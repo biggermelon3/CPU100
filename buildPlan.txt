@@ -1,0 +1,930 @@
+《CPU 100%》Unity 初始框架实现文档 v0.1
+1. 开发任务
+
+请在当前 Unity 项目中搭建《CPU 100%》的第一版可玩框架。
+
+当前阶段的目标不是完成美术和完整关卡，而是建立一个：
+
+可以直接进入 Play Mode 测试；
+核心系统能够互相联动；
+后续可以方便添加软件、平台和关卡内容；
+没有编译报错；
+不依赖外部付费插件；
+
+的基础原型。
+
+项目使用：
+
+Unity 6000.2
+2D URP
+New Input System
+固定正交相机
+目标画面比例为 16:9
+单场景、单屏幕玩法
+不使用 Cinemachine
+不使用 Tilemap
+不使用普通方块作为平台
+2. 游戏核心概念
+
+这是一个以电脑桌面为整个游戏世界的2D平台跳跃游戏。
+
+玩家控制的是一个杀毒软件化身的桌面宠物，在电脑桌面上移动。
+
+整个画面就是一张电脑桌面：
+
+背景是桌面壁纸；
+底部是任务栏；
+左上角显示CPU占用率窗口；
+桌面上散落文件、文件夹、软件和快捷方式；
+玩家站立和跳跃的平台全部由桌面图标构成；
+软件图标可以被拾取、安装并启动；
+CPU达到100%后电脑蓝屏，游戏失败。
+特别重要的视觉和关卡规则
+
+所有平台必须表现为以下物体之一：
+
+文件夹图标；
+文本文件图标；
+图片文件图标；
+浏览器快捷方式；
+游戏快捷方式；
+回收站；
+软件图标；
+病毒文件；
+系统文件；
+带快捷方式小箭头的桌面图标。
+
+不要生成普通砖块、悬浮方块或标准平台。
+
+即使暂时没有正式美术，也要使用：
+
+方形占位图标；
+图标名称文字；
+快捷方式小箭头；
+文件类型标记；
+
+让所有平台看起来像桌面图标，而不是普通平台。
+
+3. 原型的整体表现
+
+相机完全固定，不跟随玩家，不缩放，也不滚动。
+
+整个初始关卡必须完整显示在一个16:9画面中。
+
+玩家在一张固定电脑桌面内完成移动、跳跃、拾取软件和抵达终点。
+
+画面建议布局：
+
+┌────────────────────────────────────────┐
+│ CPU窗口                    系统文件     │
+│                                        │
+│           浏览器图标        加速器图标   │
+│                                        │
+│ 文件夹        文本文件       防护软件    │
+│                                        │
+│ 玩家起点      纸飞机软件      病毒文件    │
+├────────────────────────────────────────┤
+│ 开始菜单      软件任务栏槽位       时间  │
+└────────────────────────────────────────┘
+
+桌面图标在视觉上可以被适当放大，以便作为平台使用。
+
+图标由两部分组成：
+
+图标图片；
+图标下方的文件名文字。
+
+平台碰撞体可以覆盖图标主体和少量文字区域。
+
+4. 第一版必须实现的玩法
+4.1 玩家移动
+
+操作方式：
+
+输入	功能
+A / D	左右移动
+Space	跳跃
+鼠标移动	控制角色附近的虚拟鼠标
+鼠标左键拖拽	拖动软件图标
+单击任务栏软件	选择当前软件
+双击任务栏软件	启动软件
+E	使用当前运行软件的主动能力
+点击关闭按钮	永久删除对应软件
+
+玩家使用：
+
+Rigidbody2D；
+CapsuleCollider2D或BoxCollider2D；
+冻结Z轴旋转；
+地面检测；
+土狼时间；
+跳跃输入缓冲。
+
+玩家需要有以下基础状态：
+
+Idle
+Moving
+Jumping
+Falling
+InputBlocked
+Dead
+Won
+
+当前阶段可以不制作正式动画，只需要支持后续接入Animator。
+
+4.2 固定相机
+
+创建固定的Orthographic Camera。
+
+要求：
+
+相机不跟随玩家；
+不允许玩家离开屏幕左右边界；
+玩家跌出屏幕底部时，传送回起始图标；
+跌落后增加少量CPU惩罚，例如5%；
+相机视野需要完整显示桌面、所有图标和底部任务栏。
+
+不要使用Cinemachine。
+
+4.3 桌面图标平台
+
+创建统一组件：
+
+DesktopIcon
+
+每一个桌面图标都可以配置：
+
+IconName
+IconSprite
+IconType
+IsPlatform
+CanDrag
+CanInstall
+IsShortcut
+SoftwareData
+
+建议的图标类型：
+
+public enum DesktopIconType
+{
+    Folder,
+    TextFile,
+    ImageFile,
+    Shortcut,
+    Software,
+    Virus,
+    RecycleBin,
+    Accelerator,
+    SystemFile
+}
+
+图标需要支持以下状态：
+
+Normal
+Selected
+Dragging
+Installed
+Running
+Corrupted
+Deleted
+平台规则
+
+所有可站立平台都必须使用DesktopIcon。
+
+平台使用：
+
+BoxCollider2D；
+PlatformEffector2D；
+One Way Platform。
+
+玩家可以从图标下方跳上去，也可以从图标顶部站立。
+
+部分软件图标同时具备：
+
+平台功能；
+可拖拽功能；
+可安装功能。
+
+图标被拖动时：
+
+暂时禁用平台碰撞；
+跟随虚拟鼠标移动；
+放开鼠标后判断是否成功安装；
+安装失败则返回原始位置。
+5. 虚拟鼠标系统
+
+游戏中的鼠标不是无限范围操作。
+
+创建：
+
+CursorInteractor
+
+虚拟鼠标只能在玩家周围一定半径内活动，例如2.5个世界单位。
+
+具体规则：
+
+读取真实鼠标屏幕坐标；
+转换为世界坐标；
+计算鼠标与玩家之间的距离；
+如果超过最大范围，将虚拟鼠标限制在圆形范围边缘；
+所有世界交互都使用虚拟鼠标位置，而不直接使用真实鼠标位置；
+显示一个自定义光标Sprite；
+光标范围可以使用半透明圆圈进行Debug显示。
+
+虚拟鼠标可以：
+
+选择图标；
+拖动可安装软件；
+将软件拖向玩家；
+点击场景交互物。
+
+不允许隔着整个屏幕操作远处软件。
+
+6. 软件拾取与安装
+
+玩家附近存在一个安装判定范围：
+
+SoftwareInstallZone
+
+当玩家拖动软件图标，并在玩家附近释放鼠标时：
+
+检查任务栏是否有空槽位；
+如果有空位，将软件状态改为Installed；
+隐藏或删除世界中的软件图标；
+在底部任务栏生成软件槽位；
+如果任务栏已满，软件返回原位置。
+
+任务栏初始容量为3个软件。
+
+软件状态：
+
+public enum SoftwareState
+{
+    World,
+    Installed,
+    Running,
+    Corrupted,
+    Deleted
+}
+7. 软件数据结构
+
+使用ScriptableObject保存软件配置。
+
+创建：
+
+SoftwareData
+
+建议字段：
+
+string softwareName;
+Sprite icon;
+SoftwareAbilityType abilityType;
+SoftwareSideEffectType sideEffectType;
+
+float startupCpuCost;
+float runningCpuLoadPerSecond;
+float closeCpuRelief;
+float cooldown;
+
+bool canUseRepeatedly;
+bool isSpecialSoftware;
+
+能力类型：
+
+public enum SoftwareAbilityType
+{
+    None,
+    SpawnTemporaryIcon,
+    AirDash,
+    Glide,
+    ShieldPush,
+    Accelerator
+}
+
+副作用类型：
+
+public enum SoftwareSideEffectType
+{
+    None,
+    PopupBlock,
+    InputDelay,
+    InputReverse,
+    ScreenObstruction
+}
+
+第一版至少创建三个测试软件：
+
+浏览器
+启动CPU消耗：5%
+运行负载：每秒增加少量CPU
+能力：在虚拟鼠标位置生成一个临时网页快捷方式平台
+平台存在5秒
+有冷却时间
+
+生成的平台仍然必须是一个桌面图标，例如：
+
+New Tab.url
+Temporary Page
+Web Shortcut
+
+不能生成普通方块。
+
+纸飞机
+启动CPU消耗：8%
+能力：玩家向面对方向进行一次空中冲刺或短暂滑翔
+有冷却时间
+防护软件
+启动CPU消耗：12%
+能力：短时间抵挡崩坏区域，或将玩家从崩坏区域弹回安全区
+有冷却时间
+8. 任务栏系统
+
+底部创建一个仿电脑任务栏的UI。
+
+任务栏包含：
+
+3个软件槽位；
+软件图标；
+当前选中高亮；
+正在运行指示；
+冷却遮罩；
+关闭按钮；
+CPU窗口入口占位；
+开始菜单图标占位。
+
+创建：
+
+SoftwareTaskbarUI
+TaskbarSlotUI
+
+交互规则：
+
+单击软件
+
+选择为当前使用的软件。
+
+双击软件
+
+如果软件尚未运行：
+
+状态切换为Running；
+支付启动CPU消耗；
+开始持续增加CPU负载；
+显示运行高亮；
+允许按E使用能力。
+点击关闭按钮
+
+关闭操作是不可逆的。
+
+关闭后：
+
+软件永久删除；
+从任务栏消失；
+停止持续CPU负载；
+CPU立即降低一小部分；
+后续无法重新获得该软件。
+
+关闭按钮暂时不需要二次确认窗口，但需要明显反馈。
+
+9. 软件能力执行
+
+创建：
+
+SoftwareAbilityExecutor
+
+当玩家按下E时：
+
+获取当前选中的任务栏软件；
+检查软件是否正在运行；
+检查是否处于冷却；
+根据AbilityType执行对应能力；
+启动冷却；
+更新任务栏冷却遮罩。
+
+第一版可以使用明确的switch执行能力，不需要创建复杂的反射、依赖注入或服务层。
+
+示例：
+
+switch (softwareData.abilityType)
+{
+    case SoftwareAbilityType.SpawnTemporaryIcon:
+        SpawnTemporaryIcon();
+        break;
+
+    case SoftwareAbilityType.AirDash:
+        PlayerAirDash();
+        break;
+
+    case SoftwareAbilityType.ShieldPush:
+        ActivateShield();
+        break;
+}
+10. CPU系统
+
+创建全局：
+
+CPUManager
+
+CPU范围：
+
+0–100
+
+CPU增加来源：
+
+基础自然增长；
+启动软件的瞬时消耗；
+正在运行软件的持续负载；
+接触崩坏区域；
+跌出画面；
+接触病毒文件。
+
+建议字段：
+
+float currentCpu;
+float baseIncreasePerSecond;
+float activeSoftwareLoadPerSecond;
+float hazardLoadPerSecond;
+
+CPU每帧增长逻辑：
+
+最终增长速度 =
+基础增长速度
++ 所有运行软件的持续负载
++ 当前危险区域负载
+
+CPUManager需要提供事件：
+
+OnCpuChanged
+OnCpuStageChanged
+OnCpuReachedMaximum
+
+CPU阶段：
+
+public enum CPUStage
+{
+    Normal,
+    LightLoad,
+    MediumLoad,
+    HeavyLoad,
+    Critical,
+    Crashed
+}
+
+阶段区间：
+
+CPU	状态
+0–30	正常
+31–50	轻度过载
+51–70	中度过载
+71–85	严重过载
+86–99	临界状态
+100	系统崩溃
+11. CPU界面
+
+左上角创建一个仿任务管理器的小浮动窗口。
+
+显示：
+
+CPU文字；
+当前百分比；
+进度条；
+当前CPU状态；
+当前运行软件数量；
+简单温度计占位。
+
+CPU越高，窗口可以产生：
+
+轻微抖动；
+数字闪烁；
+红色警告；
+故障文字。
+
+初始版本只需要保证数据正确更新，不需要完成复杂Shader。
+
+12. 操作干扰系统
+
+创建：
+
+InputInterferenceController
+
+不要真的降低Unity帧率，也不要频繁修改Time.timeScale或Application.targetFrameRate。
+
+通过控制玩家输入模拟电脑卡顿。
+
+第一版实现：
+
+0–50%
+
+正常操作。
+
+51–70%
+
+偶尔短暂阻止输入约0.1秒。
+
+71–85%
+
+提前显示警告，然后短暂反转左右输入。
+
+86–99%
+
+更频繁出现：
+
+输入阻止；
+左右反转；
+相机轻微抖动；
+故障遮罩闪动。
+
+所有干扰必须有明显视觉提示，不能看起来像真实程序Bug。
+
+玩家控制脚本从InputInterferenceController读取：
+
+是否反转输入
+是否阻止输入
+13. 崩坏区域
+
+因为相机固定，崩坏区域从屏幕四周向中心扩张。
+
+创建：
+
+GlitchBoundsController
+
+系统根据当前CPU占用率计算安全区域大小。
+
+CPU越高：
+
+左右雪花屏向中心扩张；
+上下雪花屏向中心扩张；
+安全区域逐渐缩小。
+
+初始版本不需要正式花屏Shader，可以使用：
+
+半透明遮罩；
+随机噪点；
+故障文字；
+闪烁矩形；
+
+作为占位表现。
+
+崩坏区域规则
+
+玩家接触崩坏区域：
+
+CPU快速增加；
+玩家受到轻微推力；
+长时间停留会失败。
+
+桌面图标被崩坏区域覆盖：
+
+状态切换为Corrupted；
+无法拖动；
+无法安装；
+仍然可以作为平台踩踏；
+即使崩坏区域后退，也不恢复正常。
+
+关闭软件后CPU下降，因此崩坏边界会自然小幅后退。
+
+14. 病毒文件
+
+创建一个病毒文件DesktopIcon。
+
+病毒文件依然是一个桌面文件图标，而不是普通陷阱。
+
+玩家接触病毒文件时：
+
+瞬间增加CPU；
+播放受击反馈；
+短暂击退；
+病毒图标闪烁。
+
+病毒文件可以作为平台踩踏，但具有危险性。
+
+15. 胜负系统
+
+创建：
+
+GameStateManager
+
+状态：
+
+public enum GameState
+{
+    Playing,
+    Won,
+    Failed
+}
+胜利
+
+玩家接触桌面上的“加速器软件”图标后胜利。
+
+加速器必须表现为：
+
+桌面快捷方式；
+带快捷方式小箭头；
+图标名称例如“System Booster”。
+
+胜利后：
+
+停止玩家输入；
+停止CPU增长；
+停止崩坏区域；
+显示“System Repaired”界面。
+失败
+
+CPU达到100%后：
+
+停止玩家输入；
+短暂停顿；
+显示蓝屏界面；
+显示重新开始按钮。
+
+不要使用真正的程序卡死效果。
+
+16. 初始测试关卡
+
+创建场景：
+
+CPU100_Prototype
+
+初始关卡只需要一屏。
+
+建议图标布置：
+
+左下方文件夹图标作为玩家出生平台；
+附近放置浏览器软件；
+中间放置文本文件和图片文件平台；
+中下方放置纸飞机软件；
+中间放置一个病毒文件；
+右侧放置防护软件；
+右上方放置加速器快捷方式；
+图标之间需要通过跳跃或软件能力连接。
+
+至少设计一个普通跳跃无法轻松跨越的距离，让玩家测试浏览器生成平台或纸飞机能力。
+
+17. 推荐场景层级
+CPU100_Prototype
+├── GameRoot
+│   ├── GameStateManager
+│   ├── CPUManager
+│   ├── SoftwareInventory
+│   ├── SoftwareAbilityExecutor
+│   ├── InputInterferenceController
+│   └── GlitchBoundsController
+│
+├── Main Camera
+│
+├── DesktopWorld
+│   ├── Wallpaper
+│   ├── DesktopIcons
+│   │   ├── StartFolder
+│   │   ├── BrowserSoftware
+│   │   ├── TextFilePlatform
+│   │   ├── ImageFilePlatform
+│   │   ├── PaperPlaneSoftware
+│   │   ├── VirusFile
+│   │   ├── ShieldSoftware
+│   │   └── AcceleratorShortcut
+│   │
+│   ├── TemporaryIcons
+│   ├── Hazards
+│   └── Player
+│       ├── GroundCheck
+│       ├── InstallZone
+│       └── VirtualCursor
+│
+└── UI
+    ├── DesktopTaskbar
+    │   ├── StartButton
+    │   ├── SoftwareSlot01
+    │   ├── SoftwareSlot02
+    │   └── SoftwareSlot03
+    │
+    ├── CPUWindow
+    ├── GlitchOverlay
+    ├── WarningOverlay
+    ├── BlueScreenPanel
+    └── VictoryPanel
+18. 建议代码目录
+Assets/CPU100/
+├── Scenes/
+├── Scripts/
+│   ├── Core/
+│   │   ├── GameStateManager.cs
+│   │   ├── CPUManager.cs
+│   │   └── CPUStage.cs
+│   │
+│   ├── Player/
+│   │   ├── PlayerController2D.cs
+│   │   ├── PlayerGroundChecker.cs
+│   │   └── InputInterferenceController.cs
+│   │
+│   ├── Desktop/
+│   │   ├── DesktopIcon.cs
+│   │   ├── DesktopIconState.cs
+│   │   ├── CursorInteractor.cs
+│   │   ├── SoftwareInstallZone.cs
+│   │   └── GlitchBoundsController.cs
+│   │
+│   ├── Software/
+│   │   ├── SoftwareData.cs
+│   │   ├── SoftwareInventory.cs
+│   │   ├── SoftwareRuntimeItem.cs
+│   │   └── SoftwareAbilityExecutor.cs
+│   │
+│   ├── UI/
+│   │   ├── SoftwareTaskbarUI.cs
+│   │   ├── TaskbarSlotUI.cs
+│   │   ├── CPUWindowUI.cs
+│   │   └── GameResultUI.cs
+│   │
+│   └── Editor/
+│       └── CPU100PrototypeSceneBuilder.cs
+│
+├── ScriptableObjects/
+├── Prefabs/
+├── Art/
+└── UI/
+
+代码不要使用命名空间，项目很小：
+
+19. 一键生成原型场景
+
+请额外创建Editor工具：
+
+CPU100PrototypeSceneBuilder
+
+菜单路径：
+
+Tools/CPU 100/Build Prototype Scene
+
+点击后自动：
+
+创建或重建CPU100_Prototype场景；
+创建固定相机；
+创建玩家；
+创建桌面背景；
+创建任务栏；
+创建CPU窗口；
+创建测试图标平台；
+创建三个SoftwareData；
+创建崩坏区域；
+创建蓝屏和胜利UI；
+自动连接必要引用；
+保存场景。
+
+生成工具必须尽量做到可重复执行。
+
+如果对象已经存在，不要不断生成重复对象。
+
+20. 占位美术要求
+
+当前不需要正式美术资源。
+
+可以使用程序生成的简单Sprite，但必须保证不同物体可识别。
+
+每个图标至少需要：
+
+图标主体；
+图标下方名称；
+软件类型颜色区分；
+快捷方式小箭头；
+被选中描边；
+正在运行高亮；
+被侵蚀灰化或故障效果。
+
+不要只用没有文字的纯色方块。
+
+即使是占位平台，也必须看起来像：
+
+Browser.exe
+Folder
+New Text Document.txt
+Paper Plane.exe
+Virus.exe
+System Booster.lnk
+21. 开发限制
+
+请遵守以下规则：
+
+不要创建复杂依赖注入系统；
+不要使用Zenject；
+不要创建不必要的Service层；
+不要使用单例查找或每帧FindObjectOfType；
+不要在Update中使用LINQ；
+缓存常用组件；
+避免每帧产生GC；
+不要真的降低游戏帧率；
+不要真的冻结整个Unity；
+不要引入外部Package；
+不要制作复杂Shader；
+不要创建多关卡；
+不要制作存档系统；
+不要制作设置菜单；
+不要制作正式动画系统；
+不要偏离“固定电脑桌面”主题。
+
+当前阶段优先保证：
+
+能编译
+能进入Play
+能移动跳跃
+能站在桌面图标上
+能拖动软件
+能安装到任务栏
+能启动软件
+能使用能力
+CPU会增长
+能永久删除软件
+崩坏区域会扩张
+能够胜利和失败
+22. 开发顺序
+
+请按照以下顺序执行，并在每一阶段后检查编译错误。
+
+第一阶段
+
+实现：
+
+PlayerController2D；
+固定相机；
+DesktopIcon平台；
+玩家移动和跳跃；
+跌落重生。
+第二阶段
+
+实现：
+
+CursorInteractor；
+软件图标拖拽；
+SoftwareInstallZone；
+SoftwareInventory；
+任务栏UI。
+第三阶段
+
+实现：
+
+SoftwareData；
+软件启动；
+CPUManager；
+软件运行负载；
+软件关闭和永久删除。
+第四阶段
+
+实现：
+
+SoftwareAbilityExecutor；
+浏览器临时图标平台；
+纸飞机冲刺；
+防护能力。
+第五阶段
+
+实现：
+
+CPU阶段；
+输入阻止；
+输入反转；
+GlitchBoundsController。
+第六阶段
+
+实现：
+
+加速器终点；
+蓝屏失败；
+胜利界面；
+一键场景生成工具。
+23. 最终验收标准
+
+完成后，进入Play Mode应该能够完成以下测试：
+
+看到一张固定电脑桌面；
+相机不会移动；
+玩家出生在一个文件夹图标上；
+玩家可以在桌面图标之间跳跃；
+屏幕里没有普通方块平台；
+鼠标只能在玩家附近活动；
+可以拖动浏览器图标到玩家身上；
+浏览器进入底部任务栏；
+双击浏览器后开始运行；
+CPU增长速度变快；
+按E可以生成临时网页快捷方式平台；
+玩家可以站在生成的快捷方式上；
+点击关闭按钮后浏览器永久消失；
+CPU获得少量缓解；
+CPU升高后崩坏区域向中心扩张；
+被侵蚀的软件无法拾取但仍可踩踏；
+CPU达到100%后出现蓝屏；
+接触加速器快捷方式后出现胜利界面；
+Console中没有编译错误和持续报错。
+24. 完成后的回复格式
+
+实现完成后，请告诉我：
+
+创建了哪些脚本；
+创建了哪些场景和Prefab；
+如何生成原型场景；
+如何进入Play Mode测试；
+当前已经完成的功能；
+哪些功能使用了占位实现；
+Console是否存在错误；
+是否还有需要手动连接的Inspector引用。
+
+如果MCP无法完成某个场景操作，不要停止整个任务。先完成代码和Editor Scene Builder，并明确说明剩余的手动步骤。
