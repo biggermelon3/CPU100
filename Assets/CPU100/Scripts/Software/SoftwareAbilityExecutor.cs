@@ -13,10 +13,13 @@ public class SoftwareAbilityExecutor : MonoBehaviour
     public CursorInteractor cursor;
     public GameStateManager gameState;
     public InputInterferenceController interference;
+    public CPUManager cpuManager;
     public Transform temporaryIconsParent;
 
     public float tempIconLifetime = 5f;
     public float shieldDuration = 2.5f;
+    public float hourglassDuration = 5f;
+    [Range(0f, 1f)] public float hourglassGrowthMultiplier = 0.3f;
 
     private void Awake()
     {
@@ -25,6 +28,7 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         if (cursor == null) cursor = FindFirstObjectByType<CursorInteractor>();
         if (gameState == null) gameState = FindFirstObjectByType<GameStateManager>();
         if (interference == null) interference = FindFirstObjectByType<InputInterferenceController>();
+        if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
     }
 
     private void Start()
@@ -48,6 +52,7 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         if (gameState != null && gameState.State != GameState.Playing) return;
         if (interference != null && interference.InputBlocked) return;
         if (inventory == null) return;
+        if (player != null && player.AbilityMovementLocked) return;
 
         SoftwareRuntimeItem item = inventory.SelectedItem;
         if (item == null || !item.IsRunning || item.CooldownRemaining > 0f) return;
@@ -56,16 +61,25 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         switch (item.Data.abilityType)
         {
             case SoftwareAbilityType.SpawnTemporaryIcon:
+                if (cursor == null || !cursor.CanInteractWithWorld)
+                    return;
                 SpawnTemporaryIcon();
                 break;
 
             case SoftwareAbilityType.AirDash:
             case SoftwareAbilityType.Glide:
-                if (player != null) player.AirDash();
+                if (player == null || cursor == null)
+                    return;
+                player.AirDashTowards(cursor.PointerWorldPos);
                 break;
 
             case SoftwareAbilityType.ShieldPush:
                 if (player != null) player.ActivateShield(shieldDuration);
+                break;
+
+            case SoftwareAbilityType.CpuSlowdown:
+                if (cpuManager == null) return;
+                cpuManager.ActivateGrowthSlowdown(hourglassDuration, hourglassGrowthMultiplier);
                 break;
 
             default:

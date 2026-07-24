@@ -20,10 +20,13 @@ public class CursorInteractor : MonoBehaviour
     public GameStateManager gameState;        // fallback find
 
     public Vector2 CursorWorldPos { get; private set; }
+    public Vector2 PointerWorldPos { get; private set; }
+    public bool CanInteractWithWorld { get { return mouseInsideRadius; } }
     public DesktopIcon DraggedIcon { get { return draggedIcon; } }
 
     DesktopIcon draggedIcon;
     DesktopIcon selectedIcon;
+    Vector2 dragOffset;
     Transform cursorSprite;
     Transform rangeRing;
     SpriteRenderer rangeRingRenderer;
@@ -92,10 +95,12 @@ public class CursorInteractor : MonoBehaviour
             SetOsCursorHidden(false);
             if (ghostCursor != null && ghostCursor.gameObject.activeSelf)
                 ghostCursor.gameObject.SetActive(false);
+            if (cursorSprite != null && cursorSprite.gameObject.activeSelf)
+                cursorSprite.gameObject.SetActive(false);
             // Game froze mid-drag: return the icon home so it is not left floating.
             if (draggedIcon != null)
             {
-                draggedIcon.EndDrag(false);
+                draggedIcon.CancelDrag();
                 draggedIcon = null;
             }
             return;
@@ -106,14 +111,32 @@ public class CursorInteractor : MonoBehaviour
 
         SetOsCursorHidden(true);
         UpdateCursorPosition(mouse);
+        UpdateCursorVisuals();
         UpdateGhost();
+
+        // Outside the local interaction radius the small cursor is UI-only.
+        // Do not let the hidden, clamped world cursor click or keep dragging
+        // objects at the edge of the radius.
+        if (!mouseInsideRadius)
+        {
+            if (draggedIcon != null)
+            {
+                draggedIcon.CancelDrag();
+                draggedIcon = null;
+            }
+            return;
+        }
 
         if (draggedIcon != null)
         {
             // Releasing completes an interaction already in flight, so it is
             // processed even while the pointer is over UI (avoids a stuck drag).
-            if (mouse.leftButton.wasReleasedThisFrame) FinishDrag();
-            else draggedIcon.UpdateDrag(CursorWorldPos);
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                draggedIcon.UpdateDrag(CursorWorldPos + dragOffset);
+                FinishDrag();
+            }
+            else draggedIcon.UpdateDrag(CursorWorldPos + dragOffset);
             return;
         }
 
@@ -145,6 +168,7 @@ public class CursorInteractor : MonoBehaviour
             ? worldCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f))
             : (Vector3)screenPos;
         world.z = 0f;
+        PointerWorldPos = world;
 
         mouseInsideRadius = true;
         if (player != null)
@@ -208,10 +232,22 @@ public class CursorInteractor : MonoBehaviour
         if (show) ghostCursor.position = new Vector3(lastScreenPos.x, lastScreenPos.y, 0f);
     }
 
+    void UpdateCursorVisuals()
+    {
+        // Exactly one custom cursor is visible: the large world cursor inside
+        // the interaction radius, or the small UI cursor outside it.
+        if (cursorSprite != null &&
+            cursorSprite.gameObject.activeSelf != mouseInsideRadius)
+        {
+            cursorSprite.gameObject.SetActive(mouseInsideRadius);
+        }
+    }
+
     void OnDisable()
     {
         SetOsCursorHidden(false);
         if (ghostCursor != null) ghostCursor.gameObject.SetActive(false);
+        if (cursorSprite != null) cursorSprite.gameObject.SetActive(false);
     }
 
     void HandlePress()
@@ -242,6 +278,7 @@ public class CursorInteractor : MonoBehaviour
         if (icon.canDrag && !icon.IsCorrupted && icon.State != DesktopIconState.Installed)
         {
             if (selectedIcon == icon) selectedIcon = null; // BeginDrag replaces its state
+            dragOffset = (Vector2)icon.transform.position - CursorWorldPos;
             icon.BeginDrag();
             draggedIcon = icon;
             return;
@@ -265,11 +302,21 @@ public class CursorInteractor : MonoBehaviour
 
         bool installed = false;
         if (icon.canInstall && player != null && installZone != null &&
-            Vector2.Distance(CursorWorldPos, (Vector2)player.transform.position) <= installZone.Radius)
+            Vector2.Distance((Vector2)icon.transform.position, (Vector2)player.transform.position) <= installZone.Radius)
         {
             installed = installZone.TryInstall(icon);
         }
         icon.EndDrag(installed);
+
+        // A repositioned folder behaves like a desktop item after mouse-up:
+        // it remains selected and keeps the same outline as a clicked static icon.
+        if (!installed && icon.canDrag && !icon.canInstall &&
+            icon.iconType == DesktopIconType.Folder)
+        {
+            ClearSelection();
+            icon.SetState(DesktopIconState.Selected);
+            selectedIcon = icon;
+        }
     }
 
     void ClearSelection()

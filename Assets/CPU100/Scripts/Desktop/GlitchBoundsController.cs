@@ -31,6 +31,14 @@ public class GlitchBoundsController : MonoBehaviour
     public float corruptionCheckInterval = 0.5f;
 
     public bool Frozen { get; set; }
+    public bool IsPlayerInHazard
+    {
+        get
+        {
+            return !Frozen && playerTouching && (player == null || !player.ShieldActive) &&
+                   (gameState == null || gameState.State == GameState.Playing);
+        }
+    }
 
     // Smoothed SAFE-area boundary edges (world coords), start at the screen edges.
     float edgeLeft = -WorldHalfWidth;

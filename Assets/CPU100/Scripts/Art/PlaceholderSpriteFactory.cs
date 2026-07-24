@@ -13,6 +13,8 @@ using UnityEngine;
 public static class PlaceholderSpriteFactory
 {
     static readonly Dictionary<DesktopIconType, Sprite> IconCache = new Dictionary<DesktopIconType, Sprite>();
+    static readonly Dictionary<SoftwareAbilityType, Sprite> SoftwareIconCache =
+        new Dictionary<SoftwareAbilityType, Sprite>();
     static readonly Dictionary<int, Sprite> SolidCache = new Dictionary<int, Sprite>();
     static readonly Dictionary<string, Sprite> MiscCache = new Dictionary<string, Sprite>();
 
@@ -26,6 +28,26 @@ public static class PlaceholderSpriteFactory
         if (IconCache.TryGetValue(type, out s) && s != null) return s;
         s = BuildIcon(type);
         IconCache[type] = s;
+        return s;
+    }
+
+    public static Sprite GetSoftwareIconSprite(SoftwareAbilityType abilityType)
+    {
+        Sprite s;
+        if (SoftwareIconCache.TryGetValue(abilityType, out s) && s != null) return s;
+        s = BuildSoftwareIcon(abilityType);
+        SoftwareIconCache[abilityType] = s;
+        return s;
+    }
+
+    public static Sprite GetSystemBoosterIconSprite()
+    {
+        const string key = "system_booster_purple_v2";
+        Sprite s;
+        if (MiscCache.TryGetValue(key, out s) && s != null) return s;
+        s = BuildIcon(DesktopIconType.Accelerator);
+        s.name = "SystemBooster_Purple";
+        MiscCache[key] = s;
         return s;
     }
 
@@ -103,12 +125,11 @@ public static class PlaceholderSpriteFactory
         {
             case DesktopIconType.Folder:      return C(0xE8, 0xB8, 0x4B);
             case DesktopIconType.TextFile:    return C(0xEC, 0xEC, 0xEC);
-            case DesktopIconType.ImageFile:   return C(0x7F, 0xC9, 0x7F);
             case DesktopIconType.Shortcut:    return C(0x6F, 0xA8, 0xDC);
             case DesktopIconType.Software:    return C(0x5B, 0x9B, 0xD5);
-            case DesktopIconType.Virus:       return C(0xD9, 0x53, 0x4F);
+            case DesktopIconType.ErrorFile:   return C(0xD9, 0x53, 0x4F);
             case DesktopIconType.RecycleBin:  return C(0x9A, 0xA5, 0xB1);
-            case DesktopIconType.Accelerator: return C(0x7B, 0xD3, 0x89);
+            case DesktopIconType.Accelerator: return C(0x8D, 0x55, 0xD8);
             case DesktopIconType.SystemFile:  return C(0xB3, 0x9D, 0xDB);
             default:                          return C(0xAA, 0xAA, 0xAA);
         }
@@ -131,16 +152,160 @@ public static class PlaceholderSpriteFactory
         {
             case DesktopIconType.Folder:      DrawFolderGlyph(px, baseCol); break;
             case DesktopIconType.TextFile:    DrawTextFileGlyph(px); break;
-            case DesktopIconType.ImageFile:   DrawImageFileGlyph(px); break;
             case DesktopIconType.Shortcut:    DrawGlobeGlyph(px, baseCol); break;
             case DesktopIconType.Software:    DrawWindowGlyph(px, baseCol); break;
-            case DesktopIconType.Virus:       DrawVirusGlyph(px); break;
+            case DesktopIconType.ErrorFile:   DrawVirusGlyph(px); break;
             case DesktopIconType.RecycleBin:  DrawBinGlyph(px, baseCol); break;
             case DesktopIconType.Accelerator: DrawRocketGlyph(px); break;
             case DesktopIconType.SystemFile:  DrawGearGlyph(px, baseCol); break;
         }
 
         return MakeSprite(px, S, S, 64f, "Icon_" + type);
+    }
+
+    static Sprite BuildSoftwareIcon(SoftwareAbilityType abilityType)
+    {
+        const int S = 64;
+        var px = new Color32[S * S];
+
+        switch (abilityType)
+        {
+            case SoftwareAbilityType.SpawnTemporaryIcon:
+                DrawBrowserSoftwareIcon(px);
+                break;
+            case SoftwareAbilityType.AirDash:
+            case SoftwareAbilityType.Glide:
+                DrawPaperPlaneSoftwareIcon(px);
+                break;
+            case SoftwareAbilityType.DoubleJump:
+                DrawGameConsoleSoftwareIcon(px);
+                break;
+            case SoftwareAbilityType.ShieldPush:
+                DrawShieldSoftwareIcon(px);
+                break;
+            case SoftwareAbilityType.CpuSlowdown:
+                DrawHourglassSoftwareIcon(px);
+                break;
+            default:
+                Color32 blue = C(0x5B, 0x9B, 0xD5);
+                FillRoundedRect(px, S, S, 3, 3, 58, 58, 8, Mul(blue, 0.55f));
+                FillRoundedRect(px, S, S, 5, 5, 54, 54, 6, blue);
+                DrawWindowGlyph(px, blue);
+                break;
+        }
+
+        return MakeSprite(px, S, S, 64f, "Software_" + abilityType);
+    }
+
+    static void DrawBrowserSoftwareIcon(Color32[] px)
+    {
+        const int S = 64;
+        Color32 edgeBlue = C(0x0B, 0x78, 0xD0);
+        Color32 deepBlue = C(0x0A, 0x4F, 0xA8);
+        Color32 cyan = C(0x22, 0xC7, 0xD9);
+        Color32 pale = C(0xD9, 0xF7, 0xFA);
+
+        FillRoundedRect(px, S, S, 3, 3, 58, 58, 12, deepBlue);
+        FillRoundedRect(px, S, S, 5, 5, 54, 54, 10, edgeBlue);
+        FillCircle(px, S, S, 32, 32, 21, cyan);
+        FillCircle(px, S, S, 38, 37, 15, edgeBlue);
+        FillCircle(px, S, S, 31, 29, 10, pale);
+        FillRect(px, S, S, 13, 23, 38, 8, deepBlue);
+        FillCircle(px, S, S, 33, 27, 12, deepBlue);
+        FillCircle(px, S, S, 35, 29, 7, pale);
+    }
+
+    static void DrawPaperPlaneSoftwareIcon(Color32[] px)
+    {
+        const int S = 64;
+        Color32 sky = C(0x62, 0xB9, 0xE8);
+        Color32 border = C(0x3C, 0x91, 0xC4);
+        Color32 fold = C(0xD9, 0xF1, 0xFA);
+
+        FillRoundedRect(px, S, S, 3, 3, 58, 58, 12, border);
+        FillRoundedRect(px, S, S, 5, 5, 54, 54, 10, sky);
+        for (int y = 0; y <= 30; y++)
+        {
+            int x0 = 13 + y / 3;
+            int x1 = 49 - y;
+            if (x1 >= x0) HLine(px, S, S, x0, x1, 18 + y, White);
+        }
+        for (int i = 0; i <= 22; i++)
+            FillRect(px, S, S, 25 + i, 19 + i, 1, 1, fold);
+        for (int y = 0; y <= 13; y++)
+            HLine(px, S, S, 25, 25 + y, 18 + y, fold);
+    }
+
+    static void DrawGameConsoleSoftwareIcon(Color32[] px)
+    {
+        const int S = 64;
+        Color32 red = C(0xD9, 0x42, 0x42);
+        Color32 darkRed = C(0x9F, 0x25, 0x2E);
+        Color32 gray = C(0xE8, 0xE8, 0xE8);
+
+        FillRoundedRect(px, S, S, 3, 3, 58, 58, 10, C(0xC8, 0xC8, 0xC8));
+        FillRoundedRect(px, S, S, 5, 5, 54, 54, 8, White);
+        FillRoundedRect(px, S, S, 13, 20, 38, 24, 9, darkRed);
+        FillRoundedRect(px, S, S, 15, 22, 34, 20, 7, red);
+        FillRect(px, S, S, 21, 29, 12, 4, White);
+        FillRect(px, S, S, 25, 25, 4, 12, White);
+        FillCircle(px, S, S, 40, 34, 3, White);
+        FillCircle(px, S, S, 45, 29, 3, gray);
+        FillRect(px, S, S, 21, 18, 7, 6, red);
+        FillRect(px, S, S, 37, 18, 7, 6, red);
+    }
+
+    static void DrawShieldSoftwareIcon(Color32[] px)
+    {
+        const int S = 64;
+        Color32 green = C(0x35, 0xAE, 0x63);
+        Color32 darkGreen = C(0x1E, 0x7A, 0x42);
+
+        FillRoundedRect(px, S, S, 3, 3, 58, 58, 10, C(0xC8, 0xC8, 0xC8));
+        FillRoundedRect(px, S, S, 5, 5, 54, 54, 8, White);
+        FillRect(px, S, S, 18, 31, 29, 15, darkGreen);
+        for (int y = 0; y <= 20; y++)
+        {
+            int inset = y / 3;
+            HLine(px, S, S, 19 + inset, 45 - inset, 30 - y, darkGreen);
+        }
+        FillRect(px, S, S, 21, 32, 23, 11, green);
+        for (int y = 0; y <= 16; y++)
+        {
+            int inset = y / 3;
+            HLine(px, S, S, 22 + inset, 42 - inset, 31 - y, green);
+        }
+        FillRect(px, S, S, 30, 24, 5, 14, White);
+        FillRect(px, S, S, 26, 29, 13, 5, White);
+    }
+
+    static void DrawHourglassSoftwareIcon(Color32[] px)
+    {
+        const int S = 64;
+        Color32 gold = C(0xE2, 0xB3, 0x3F);
+        Color32 dark = C(0x6E, 0x4B, 0x20);
+        Color32 sand = C(0xF4, 0xD4, 0x72);
+
+        FillRoundedRect(px, S, S, 3, 3, 58, 58, 10, C(0xA8, 0x7B, 0x2D));
+        FillRoundedRect(px, S, S, 5, 5, 54, 54, 8, gold);
+        FillRect(px, S, S, 17, 45, 30, 4, dark);
+        FillRect(px, S, S, 17, 15, 30, 4, dark);
+        VLine(px, S, S, 20, 19, 45, dark);
+        VLine(px, S, S, 43, 19, 45, dark);
+
+        for (int y = 0; y <= 12; y++)
+        {
+            int inset = y;
+            HLine(px, S, S, 21 + inset, 42 - inset, 42 - y, White);
+            HLine(px, S, S, 21 + inset, 42 - inset, 21 + y, White);
+        }
+        for (int y = 0; y <= 8; y++)
+        {
+            int half = 8 - y;
+            HLine(px, S, S, 32 - half, 32 + half, 39 - y, sand);
+            HLine(px, S, S, 32 - y, 32 + y, 22 + y, sand);
+        }
+        VLine(px, S, S, 32, 29, 34, sand);
     }
 
     /// <summary>Gold base, darker folder tab + body with lighter front panel.</summary>
@@ -168,21 +333,6 @@ public static class PlaceholderSpriteFactory
         FillRect(px, S, S, 24, 29, 16, 2, ink);
         FillRect(px, S, S, 24, 24, 16, 2, ink);
         FillRect(px, S, S, 24, 19, 10, 2, ink);    // short last line
-    }
-
-    /// <summary>White page with sun + two mountains.</summary>
-    static void DrawImageFileGlyph(Color32[] px)
-    {
-        const int S = 64;
-        FillRect(px, S, S, 17, 13, 30, 38, White);
-        RectOutline(px, S, S, 17, 13, 30, 38, 1, C(0x9A, 0x9A, 0x9A));
-        FillCircle(px, S, S, 38, 42, 4, C(0xF5, 0xC5, 0x42));            // sun
-        Color32 far = C(0x2F, 0x6B, 0x2F);
-        Color32 near = C(0x4E, 0x8B, 0x4E);
-        for (int i = 0; i <= 18; i++)                                     // big mountain
-            HLine(px, S, S, Mathf.Max(18, 27 - i), Mathf.Min(45, 27 + i), 34 - i, far);
-        for (int i = 0; i <= 12; i++)                                     // small mountain in front
-            HLine(px, S, S, Mathf.Max(18, 39 - i), Mathf.Min(45, 39 + i), 28 - i, near);
     }
 
     /// <summary>White globe (circle + meridian cross) with a small dark arrow.</summary>
@@ -283,9 +433,13 @@ public static class PlaceholderSpriteFactory
 
     static Sprite BuildShortcutArrow()
     {
+        return BuildShortcutArrow(C(0x2F, 0x6F, 0xC9));
+    }
+
+    static Sprite BuildShortcutArrow(Color32 blue)
+    {
         const int S = 24;
         var px = new Color32[S * S];
-        Color32 blue = C(0x2F, 0x6F, 0xC9);
         FillRoundedRect(px, S, S, 0, 0, 24, 24, 4, Mul(blue, 0.6f));
         FillRoundedRect(px, S, S, 1, 1, 22, 22, 3, blue);
         for (int i = 0; i <= 8; i++)               // diagonal shaft, pointing up-right

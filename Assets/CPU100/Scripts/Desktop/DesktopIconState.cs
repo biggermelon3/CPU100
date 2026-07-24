@@ -3,15 +3,14 @@
 
 public enum DesktopIconType
 {
-    Folder,
-    TextFile,
-    ImageFile,
-    Shortcut,
-    Software,
-    Virus,
-    RecycleBin,
-    Accelerator,
-    SystemFile
+    Folder = 0,
+    TextFile = 1,
+    Shortcut = 3,
+    Software = 4,
+    ErrorFile = 5,
+    RecycleBin = 6,
+    Accelerator = 7,
+    SystemFile = 8
 }
 
 public enum DesktopIconState

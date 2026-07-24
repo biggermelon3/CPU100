@@ -2,7 +2,17 @@ using UnityEngine;
 
 // File-scope enums shared across modules (contract §5.12).
 
-public enum SoftwareAbilityType { None, SpawnTemporaryIcon, AirDash, Glide, ShieldPush, Accelerator }
+public enum SoftwareAbilityType
+{
+    None,
+    SpawnTemporaryIcon,
+    AirDash,
+    Glide,
+    ShieldPush,
+    Accelerator,
+    DoubleJump,
+    CpuSlowdown
+}
 
 public enum SoftwareSideEffectType { None, PopupBlock, InputDelay, InputReverse, ScreenObstruction }
 

@@ -54,7 +54,7 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler
             {
                 iconImage.sprite = item.Data.icon != null
                     ? item.Data.icon
-                    : PlaceholderSpriteFactory.GetIconSprite(DesktopIconType.Software);
+                    : PlaceholderSpriteFactory.GetSoftwareIconSprite(item.Data.abilityType);
             }
         }
 

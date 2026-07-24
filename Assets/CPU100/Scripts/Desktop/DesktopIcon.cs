@@ -8,6 +8,7 @@ using UnityEngine;
 /// fresh GameObject — so that method uses only plain APIs, never destroys anything and
 /// never duplicates children or components.
 /// </summary>
+[ExecuteAlways]
 public class DesktopIcon : MonoBehaviour
 {
     /// <summary>Registry of all enabled icons (added OnEnable, removed OnDisable).</summary>
@@ -38,6 +39,7 @@ public class DesktopIcon : MonoBehaviour
     // ---------------- Runtime state ----------------
     private DesktopIconState state = DesktopIconState.Normal;
     private Vector3 homePosition;
+    private Vector3 dragOrigin;
 
     // Cached visuals / colliders (filled by EnsureVisuals, which Awake always calls).
     private SpriteRenderer bodyRenderer;
@@ -71,16 +73,38 @@ public class DesktopIcon : MonoBehaviour
     {
         homePosition = transform.position;
 
-        if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
-        if (gameStateManager == null) gameStateManager = FindFirstObjectByType<GameStateManager>();
-        if (player == null) player = FindFirstObjectByType<PlayerController2D>();
+        if (Application.isPlaying)
+        {
+            if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
+            if (gameStateManager == null) gameStateManager = FindFirstObjectByType<GameStateManager>();
+            if (player == null) player = FindFirstObjectByType<PlayerController2D>();
+        }
 
-        // Re-runs the full visual setup. Crucially this re-assigns every sprite:
-        // procedurally generated sprites do NOT survive a scene save, so icons built in
-        // edit mode wake up with dead sprite references that must be replaced here.
-        // (iconSprite wins if the user assigned real art — it is a persistent asset.)
-        EnsureVisuals();
+        // Software visuals are authored in the scene hierarchy. Entering Play Mode
+        // must not create their child objects, so artists can edit them directly.
+        if (iconType == DesktopIconType.Software)
+        {
+            if (!BindExistingSoftwareVisuals())
+                Debug.LogError("[CPU100] Software icon hierarchy is incomplete: " + name, this);
+        }
+        else
+        {
+            EnsureVisuals();
+        }
         ApplyStateVisuals();
+    }
+
+    private void OnValidate()
+    {
+        if (Application.isPlaying) return;
+
+        // Keep the pre-authored hierarchy visible while editing. This only binds
+        // existing Software children; it does not create Play Mode objects.
+        if (iconType == DesktopIconType.Software)
+        {
+            BindExistingSoftwareVisuals();
+            ApplyStateVisuals();
+        }
     }
 
     private void OnEnable()
@@ -94,6 +118,62 @@ public class DesktopIcon : MonoBehaviour
     }
 
     // ---------------- Visual construction (edit mode AND play mode, idempotent) ----------------
+
+    private bool BindExistingSoftwareVisuals()
+    {
+        transform.localScale = Vector3.one * iconScale;
+
+        int platformLayer = LayerMask.NameToLayer("Platform");
+        gameObject.layer = platformLayer >= 0 ? platformLayer : 0;
+
+        Transform body = transform.Find("Body");
+        Transform arrow = transform.Find("ShortcutArrow");
+        Transform label = transform.Find("Label");
+        Transform selection = transform.Find("SelectionOutline");
+        Transform running = transform.Find("RunningGlow");
+        Transform corruption = transform.Find("CorruptionOverlay");
+
+        if (body == null || label == null || selection == null ||
+            running == null || corruption == null)
+            return false;
+
+        bodyRenderer = body.GetComponent<SpriteRenderer>();
+        shortcutArrowRenderer = arrow != null ? arrow.GetComponent<SpriteRenderer>() : null;
+        labelMesh = label.GetComponent<TextMesh>();
+        selectionOutlineRenderer = selection.GetComponent<SpriteRenderer>();
+        runningGlowRenderer = running.GetComponent<SpriteRenderer>();
+        corruptionOverlayRenderer = corruption.GetComponent<SpriteRenderer>();
+        platformCollider = FindRootBoxCollider(trigger: false);
+
+        if (bodyRenderer == null || labelMesh == null ||
+            selectionOutlineRenderer == null || runningGlowRenderer == null ||
+            corruptionOverlayRenderer == null || (isPlatform && platformCollider == null))
+            return false;
+
+        // Bind data to pre-authored renderers only. This method never creates a
+        // GameObject or adds a component.
+        if (bodyRenderer.sprite == null ||
+            (bodyRenderer.sprite.hideFlags & HideFlags.DontSave) != 0)
+        bodyRenderer.sprite = ResolveBodySprite();
+        label.localPosition = new Vector3(0f, -0.52f, 0f);
+        label.localScale = Vector3.one * (1.2f / Mathf.Max(0.01f, iconScale));
+        labelMesh.text = iconName;
+        labelMesh.characterSize = 0.05f;
+        if (shortcutArrowRenderer != null)
+        {
+            if (shortcutArrowRenderer.sprite == null)
+                shortcutArrowRenderer.sprite = PlaceholderSpriteFactory.GetShortcutArrow();
+            shortcutArrowRenderer.gameObject.SetActive(isShortcut);
+        }
+        if (selectionOutlineRenderer.sprite == null)
+            selectionOutlineRenderer.sprite = PlaceholderSpriteFactory.GetSolid(Color.white);
+        if (runningGlowRenderer.sprite == null)
+            runningGlowRenderer.sprite = PlaceholderSpriteFactory.GetSolid(Color.white);
+        if (corruptionOverlayRenderer.sprite == null)
+            corruptionOverlayRenderer.sprite = PlaceholderSpriteFactory.GetNoise();
+
+        return true;
+    }
 
     public void EnsureVisuals()
     {
@@ -114,12 +194,13 @@ public class DesktopIcon : MonoBehaviour
 
         // File-name label (legacy TextMesh, never TMP).
         Transform labelTransform = GetOrCreateChild("Label");
-        labelTransform.localPosition = new Vector3(0f, -0.62f, 0f);
+        labelTransform.localPosition = new Vector3(0f, -0.52f, 0f);
+        labelTransform.localScale = Vector3.one * (1.2f / Mathf.Max(0.01f, iconScale));
         labelMesh = GetOrAdd<TextMesh>(labelTransform.gameObject);
         labelMesh.text = iconName;
         labelMesh.anchor = TextAnchor.UpperCenter;
         labelMesh.alignment = TextAlignment.Center;
-        labelMesh.characterSize = 0.07f;
+        labelMesh.characterSize = 0.05f;
         labelMesh.fontSize = 64;
         labelMesh.color = Color.white;
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -140,7 +221,7 @@ public class DesktopIcon : MonoBehaviour
         selectionOutlineRenderer.transform.localScale = Vector3.one * 1.25f;
         selectionOutlineRenderer.sprite = PlaceholderSpriteFactory.GetSolid(Color.white);
         selectionOutlineRenderer.color = new Color(1f, 1f, 1f, 0.35f);
-        selectionOutlineRenderer.gameObject.SetActive(state == DesktopIconState.Selected);
+        selectionOutlineRenderer.gameObject.SetActive(ShowsSelectionOutline());
 
         // Running glow (furthest back).
         runningGlowRenderer = GetOrCreateChildRenderer("RunningGlow", new Vector3(0f, 0.1f, 0f), 8);
@@ -182,7 +263,7 @@ public class DesktopIcon : MonoBehaviour
         // child GameObjects: icons have no Rigidbody2D, so a static child collider would
         // deliver its OnTrigger* messages to the child GO where no component listens.
         // On the root they arrive directly on this component.
-        if (iconType == DesktopIconType.Virus)
+        if (iconType == DesktopIconType.ErrorFile)
         {
             CircleCollider2D damageTrigger = GetOrAdd<CircleCollider2D>(gameObject);
             damageTrigger.isTrigger = true;
@@ -204,7 +285,12 @@ public class DesktopIcon : MonoBehaviour
     {
         // Explicit null check (not ??): destroyed/not-saved sprite references must fall
         // back to the factory sprite.
-        return iconSprite != null ? iconSprite : PlaceholderSpriteFactory.GetIconSprite(iconType);
+        if (iconSprite != null) return iconSprite;
+        if (iconType == DesktopIconType.Software && softwareData != null)
+            return PlaceholderSpriteFactory.GetSoftwareIconSprite(softwareData.abilityType);
+        if (iconType == DesktopIconType.Accelerator)
+            return PlaceholderSpriteFactory.GetSystemBoosterIconSprite();
+        return PlaceholderSpriteFactory.GetIconSprite(iconType);
     }
 
     private SpriteRenderer GetOrCreateChildRenderer(string childName, Vector3 localPos, int sortingOrder)
@@ -264,7 +350,7 @@ public class DesktopIcon : MonoBehaviour
     private void ApplyStateVisuals()
     {
         if (selectionOutlineRenderer != null)
-            selectionOutlineRenderer.gameObject.SetActive(state == DesktopIconState.Selected);
+            selectionOutlineRenderer.gameObject.SetActive(ShowsSelectionOutline());
         if (runningGlowRenderer != null)
             runningGlowRenderer.gameObject.SetActive(state == DesktopIconState.Running);
         if (corruptionOverlayRenderer != null)
@@ -280,6 +366,12 @@ public class DesktopIcon : MonoBehaviour
         return c;
     }
 
+    private bool ShowsSelectionOutline()
+    {
+        return state == DesktopIconState.Selected ||
+               (state == DesktopIconState.Dragging && canDrag);
+    }
+
     // ---------------- Dragging (driven by CursorInteractor) ----------------
 
     public void BeginDrag()
@@ -287,6 +379,7 @@ public class DesktopIcon : MonoBehaviour
         // CursorInteractor already filters, but stay safe against direct calls.
         if (IsCorrupted || state == DesktopIconState.Deleted || state == DesktopIconState.Installed) return;
 
+        dragOrigin = transform.position;
         SetState(DesktopIconState.Dragging);
         // Disable ONLY the platform collider so the icon stops being a wall/floor while
         // carried. Trigger colliders of other icons stay untouched.
@@ -308,7 +401,23 @@ public class DesktopIcon : MonoBehaviour
             return;
         }
 
-        transform.position = homePosition;
+        // Installable software snaps back when the pickup/install attempt fails.
+        // Ordinary draggable desktop items are being rearranged, so their drop
+        // position becomes the new home position for subsequent drags.
+        if (canInstall)
+            transform.position = dragOrigin;
+        else
+            homePosition = transform.position;
+
+        SetState(DesktopIconState.Normal);
+        if (platformCollider != null) platformCollider.enabled = true;
+    }
+
+    public void CancelDrag()
+    {
+        if (state != DesktopIconState.Dragging) return;
+
+        transform.position = dragOrigin;
         SetState(DesktopIconState.Normal);
         if (platformCollider != null) platformCollider.enabled = true;
     }
@@ -356,7 +465,7 @@ public class DesktopIcon : MonoBehaviour
     {
         // Stay only matters for the virus: re-hit after the cooldown while the player
         // keeps standing on/inside it. (Cooldown gate keeps this cheap.)
-        if (iconType == DesktopIconType.Virus) HandlePlayerTrigger(other);
+        if (iconType == DesktopIconType.ErrorFile) HandlePlayerTrigger(other);
     }
 
     private void HandlePlayerTrigger(Collider2D other)
@@ -364,7 +473,7 @@ public class DesktopIcon : MonoBehaviour
         if (state == DesktopIconState.Deleted) return;
         if (!other.CompareTag("Player")) return;
 
-        if (iconType == DesktopIconType.Virus) TryVirusHit(other);
+        if (iconType == DesktopIconType.ErrorFile) TryVirusHit(other);
         else if (iconType == DesktopIconType.Accelerator) TryTriggerWin();
     }
 

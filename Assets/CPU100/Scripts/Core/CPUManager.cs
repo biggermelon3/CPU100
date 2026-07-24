@@ -23,6 +23,8 @@ public class CPUManager : MonoBehaviour
     private float currentCpu;
     private CPUStage currentStage = CPUStage.Normal;
     private float hazardLoad;
+    private float growthSlowdownTimer;
+    private float growthMultiplier = 1f;
     private bool maximumFired;
 
     private void Awake()
@@ -38,12 +40,22 @@ public class CPUManager : MonoBehaviour
         if (Frozen || maximumFired)
             return;
 
+        if (growthSlowdownTimer > 0f)
+        {
+            growthSlowdownTimer -= Time.deltaTime;
+            if (growthSlowdownTimer <= 0f)
+            {
+                growthSlowdownTimer = 0f;
+                growthMultiplier = 1f;
+            }
+        }
+
         float perSecond = baseIncreasePerSecond + hazardLoad;
         if (softwareInventory != null)
             perSecond += softwareInventory.TotalRunningLoadPerSecond;
 
         if (perSecond != 0f)
-            AddCpu(perSecond * Time.deltaTime);
+            AddCpu(perSecond * growthMultiplier * Time.deltaTime);
     }
 
     /// <summary>Instant add, clamps to 0..100, fires events. No-op after Crashed or while Frozen.</summary>
@@ -62,6 +74,14 @@ public class CPUManager : MonoBehaviour
     public void SetHazardLoad(float perSecond)
     {
         hazardLoad = Mathf.Max(0f, perSecond);
+    }
+
+    public void ActivateGrowthSlowdown(float duration, float multiplier)
+    {
+        if (Frozen || maximumFired) return;
+
+        growthSlowdownTimer = Mathf.Max(growthSlowdownTimer, Mathf.Max(0f, duration));
+        growthMultiplier = Mathf.Min(growthMultiplier, Mathf.Clamp01(multiplier));
     }
 
     public static CPUStage StageForValue(float cpu)

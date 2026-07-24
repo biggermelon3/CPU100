@@ -9,6 +9,7 @@ using UnityEngine;
 public class SoftwareInventory : MonoBehaviour
 {
     public CPUManager cpuManager;
+    public PlayerController2D player;
 
     public const int Capacity = 3;
 
@@ -61,6 +62,7 @@ public class SoftwareInventory : MonoBehaviour
     private void Awake()
     {
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
+        if (player == null) player = FindFirstObjectByType<PlayerController2D>();
     }
 
     private void Update()
@@ -121,6 +123,7 @@ public class SoftwareInventory : MonoBehaviour
             cpuManager.AddCpu(item.Data.startupCpuCost);
         }
         RecomputeRunningLoad();
+        RefreshPassiveAbilities();
         OnInventoryChanged?.Invoke();
         return true;
     }
@@ -148,6 +151,7 @@ public class SoftwareInventory : MonoBehaviour
         }
 
         RecomputeRunningLoad();
+        RefreshPassiveAbilities();
         OnInventoryChanged?.Invoke();
     }
 
@@ -163,5 +167,23 @@ public class SoftwareInventory : MonoBehaviour
             }
         }
         totalRunningLoadPerSecond = total;
+    }
+
+    private void RefreshPassiveAbilities()
+    {
+        bool doubleJump = false;
+        for (int i = 0; i < Capacity; i++)
+        {
+            SoftwareRuntimeItem item = slots[i];
+            if (item != null && item.IsRunning && item.Data != null &&
+                item.Data.abilityType == SoftwareAbilityType.DoubleJump)
+            {
+                doubleJump = true;
+                break;
+            }
+        }
+
+        if (player != null)
+            player.SetDoubleJumpEnabled(doubleJump);
     }
 }

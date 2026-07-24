@@ -16,9 +16,9 @@ MonoBehaviour:
   icon: {fileID: 0}
   abilityType: 2
   sideEffectType: 0
-  startupCpuCost: 8
-  runningCpuLoadPerSecond: 0.8
-  closeCpuRelief: 5
+  startupCpuCost: 12
+  runningCpuLoadPerSecond: 1.2
+  closeCpuRelief: 12
   cooldown: 2.5
   canUseRepeatedly: 1
   isSpecialSoftware: 0

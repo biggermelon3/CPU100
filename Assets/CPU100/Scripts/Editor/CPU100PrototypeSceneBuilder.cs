@@ -14,8 +14,8 @@ using UnityEngine.UI;
 public static class CPU100PrototypeSceneBuilder
 {
     const string RootFolder = "Assets/CPU100";
-    const string ScenePath = RootFolder + "/Scenes/CPU100_Prototype.unity";
-    const string SoFolder = RootFolder + "/ScriptableObjects";
+    const string ScenePath = RootFolder + "/Scenes/Prototype/CPU100_Prototype.unity";
+    const string SoFolder = RootFolder + "/Data/Software";
 
     // Created-vs-reused bookkeeping for the completion summary.
     static int createdObjects, reusedObjects, createdComponents, createdAssets, reusedAssets;
@@ -24,7 +24,7 @@ public static class CPU100PrototypeSceneBuilder
     class Refs
     {
         public Camera camera;
-        public SoftwareData browserData, paperPlaneData, shieldData;
+        public SoftwareData browserData, paperPlaneData, shieldData, gameConsoleData, hourglassData;
 
         public GameStateManager gameState;
         public CPUManager cpuManager;
@@ -113,11 +113,18 @@ public static class CPU100PrototypeSceneBuilder
     {
         EnsureFolder("Assets", "CPU100");
         EnsureFolder(RootFolder, "Scenes");
+        EnsureFolder(RootFolder + "/Scenes", "Prototype");
         EnsureFolder(RootFolder, "Scripts");
-        EnsureFolder(RootFolder, "ScriptableObjects");
+        EnsureFolder(RootFolder, "Data");
+        EnsureFolder(RootFolder + "/Data", "Software");
         EnsureFolder(RootFolder, "Prefabs");
+        EnsureFolder(RootFolder + "/Prefabs", "Characters");
+        EnsureFolder(RootFolder + "/Prefabs", "Desktop");
+        EnsureFolder(RootFolder + "/Prefabs/Desktop", "Icons");
+        EnsureFolder(RootFolder + "/Prefabs", "Environment");
+        EnsureFolder(RootFolder + "/Prefabs", "Systems");
+        EnsureFolder(RootFolder + "/Prefabs", "UI");
         EnsureFolder(RootFolder, "Art");
-        EnsureFolder(RootFolder, "UI");
     }
 
     static void EnsureFolder(string parent, string name)
@@ -221,9 +228,13 @@ public static class CPU100PrototypeSceneBuilder
         r.browserData = EnsureSoftwareAsset(SoFolder + "/Browser.asset", "Browser",
             SoftwareAbilityType.SpawnTemporaryIcon, 5f, 1.2f, 6f, 4f);
         r.paperPlaneData = EnsureSoftwareAsset(SoFolder + "/PaperPlane.asset", "Paper Plane",
-            SoftwareAbilityType.AirDash, 8f, 0.8f, 5f, 2.5f);
+            SoftwareAbilityType.AirDash, 12f, 1.2f, 12f, 2.5f);
         r.shieldData = EnsureSoftwareAsset(SoFolder + "/Shield.asset", "Shield",
             SoftwareAbilityType.ShieldPush, 12f, 1.5f, 8f, 6f);
+        r.gameConsoleData = EnsureSoftwareAsset(SoFolder + "/GameConsole.asset", "Game Console",
+            SoftwareAbilityType.DoubleJump, 10f, 0.5f, 10f, 0f);
+        r.hourglassData = EnsureSoftwareAsset(SoFolder + "/Hourglass.asset", "Hourglass",
+            SoftwareAbilityType.CpuSlowdown, 6f, 0.4f, 6f, 12f);
     }
 
     static SoftwareData EnsureSoftwareAsset(string path, string softwareName,
@@ -337,13 +348,14 @@ public static class CPU100PrototypeSceneBuilder
     {
         IconSpec[] specs = new IconSpec[]
         {
-            new IconSpec("StartFolder",         "Documents",             DesktopIconType.Folder,      new Vector2(-7.8f, -3.4f), 1.4f, false, false, false, null),
+            new IconSpec("StartFolder",         "Documents",             DesktopIconType.Folder,      new Vector2(-7.8f, -3.4f), 1.4f, true,  false, false, null),
             new IconSpec("BrowserSoftware",     "Browser.exe",           DesktopIconType.Software,    new Vector2(-6.0f, -3.9f), 1.2f, true,  true,  false, r.browserData),
             new IconSpec("PaperPlaneSoftware",  "Paper Plane.exe",       DesktopIconType.Software,    new Vector2(-2.8f, -3.7f), 1.2f, true,  true,  false, r.paperPlaneData),
             new IconSpec("TextFilePlatform",    "New Text Document.txt", DesktopIconType.TextFile,    new Vector2(-5.0f, -1.8f), 1.3f, false, false, false, null),
-            new IconSpec("ImageFilePlatform",   "photo.png",             DesktopIconType.ImageFile,   new Vector2(-2.4f, -0.4f), 1.3f, false, false, false, null),
-            new IconSpec("VirusFile",           "virus.exe",             DesktopIconType.Virus,       new Vector2(0.4f, -2.6f),  1.3f, false, false, false, null),
-            new IconSpec("SystemFile",          "system32.dll",          DesktopIconType.SystemFile,  new Vector2(0.6f, 1.1f),   1.3f, false, false, false, null),
+            new IconSpec("GameConsoleSoftware", "Game Console.exe",      DesktopIconType.Software,    new Vector2(-2.4f, -0.4f), 1.3f, true,  true,  false, r.gameConsoleData),
+            new IconSpec("ErrorFile",           "Error File",            DesktopIconType.ErrorFile,   new Vector2(0.4f, -2.6f),  1.3f, false, false, false, null),
+            new IconSpec("HourglassSoftware",   "Hourglass.exe",         DesktopIconType.Software,    new Vector2(0.6f, 1.1f),   1.3f, true,  true,  false, r.hourglassData),
+            new IconSpec("SystemFile",          "system32.dll",          DesktopIconType.SystemFile,  new Vector2(2.42f, -3.97f), 1.5f, false, false, false, null),
             new IconSpec("ShieldSoftware",      "Shield.exe",            DesktopIconType.Software,    new Vector2(4.2f, -1.6f),  1.2f, true,  true,  false, r.shieldData),
             new IconSpec("RecycleBin",          "Recycle Bin",           DesktopIconType.RecycleBin,  new Vector2(8.5f, -3.9f),  1.5f, false, false, false, null),
             new IconSpec("AcceleratorShortcut", "System Booster.lnk",    DesktopIconType.Accelerator, new Vector2(7.4f, 2.6f),   1.4f, false, false, true,  null),
@@ -408,7 +420,45 @@ public static class CPU100PrototypeSceneBuilder
 
         SpriteRenderer sr = GetOrAddComponent<SpriteRenderer>(player);
         sr.sortingOrder = 50;
-        ConfigurePlaceholder(player, PlaceholderVisualKind.Player, Color.white);
+        RuntimeAnimatorController playerController =
+            AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/CPU100/Animations/Player/Player.controller");
+        if (playerController != null)
+        {
+            PlaceholderVisual placeholder = player.GetComponent<PlaceholderVisual>();
+            if (placeholder != null)
+                Object.DestroyImmediate(placeholder);
+            GameObject visual = GetOrCreateChild(player.transform, "Visual");
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one * 1.6f;
+            SpriteRenderer visualRenderer = GetOrAddComponent<SpriteRenderer>(visual);
+            visualRenderer.sortingOrder = 50;
+            if (sr != null)
+            {
+                visualRenderer.sharedMaterials = sr.sharedMaterials;
+                Object.DestroyImmediate(sr);
+                sr = visualRenderer;
+            }
+            if (visualRenderer.sprite != null)
+            {
+                CapsuleCollider2D existingCapsule = player.GetComponent<CapsuleCollider2D>();
+                float colliderBottom = existingCapsule != null
+                    ? existingCapsule.offset.y - existingCapsule.size.y * 0.5f
+                    : -0.4f;
+                float spriteBottom = visualRenderer.sprite.bounds.min.y * visual.transform.localScale.y;
+                visual.transform.localPosition =
+                    new Vector3(0f, colliderBottom - spriteBottom, 0f);
+            }
+            Animator animator = GetOrAddComponent<Animator>(player);
+            animator.runtimeAnimatorController = playerController;
+            animator.applyRootMotion = false;
+            GetOrAddComponent<PlayerAnimationController>(player);
+            Dirty(animator);
+        }
+        else
+        {
+            ConfigurePlaceholder(player, PlaceholderVisualKind.Player, Color.white);
+        }
 
         Rigidbody2D rb = GetOrAddComponent<Rigidbody2D>(player);
         rb.gravityScale = 3.5f;
@@ -421,6 +471,19 @@ public static class CPU100PrototypeSceneBuilder
         CapsuleCollider2D capsule = GetOrAddComponent<CapsuleCollider2D>(player);
         capsule.size = new Vector2(0.55f, 0.8f);
         capsule.direction = CapsuleDirection2D.Vertical;
+        Transform playerVisual = player.transform.Find("Visual");
+        if (playerVisual != null)
+        {
+            SpriteRenderer playerVisualRenderer = playerVisual.GetComponent<SpriteRenderer>();
+            if (playerVisualRenderer != null && playerVisualRenderer.sprite != null)
+            {
+                float colliderBottom = capsule.offset.y - capsule.size.y * 0.5f;
+                float spriteBottom =
+                    playerVisualRenderer.sprite.bounds.min.y * playerVisual.localScale.y;
+                playerVisual.localPosition =
+                    new Vector3(0f, colliderBottom - spriteBottom, 0f);
+            }
+        }
 
         r.player = GetOrAddComponent<PlayerController2D>(player);
 
@@ -740,6 +803,7 @@ public static class CPU100PrototypeSceneBuilder
         Dirty(r.cpuManager);
 
         r.inventory.cpuManager = r.cpuManager;
+        r.inventory.player = r.player;
         Dirty(r.inventory);
 
         r.gameState.cpuManager = r.cpuManager;
@@ -754,6 +818,7 @@ public static class CPU100PrototypeSceneBuilder
         r.abilityExecutor.cursor = r.cursor;
         r.abilityExecutor.gameState = r.gameState;
         r.abilityExecutor.interference = r.interference;
+        r.abilityExecutor.cpuManager = r.cpuManager;
         r.abilityExecutor.temporaryIconsParent = r.temporaryIcons;
         Dirty(r.abilityExecutor);
 
