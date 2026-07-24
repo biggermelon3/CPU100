@@ -32,6 +32,7 @@ public static class CPU100PrototypeSceneBuilder
         public SoftwareAbilityExecutor abilityExecutor;
         public InputInterferenceController interference;
         public GlitchBoundsController glitchBounds;
+        public Transform acceleratorIcon;
 
         public Transform temporaryIcons;
         public Transform glitchLeft, glitchRight, glitchTop, glitchBottom;
@@ -86,6 +87,10 @@ public static class CPU100PrototypeSceneBuilder
         }
 
         createdObjects = reusedObjects = createdComponents = createdAssets = reusedAssets = 0;
+
+        // Keep the game (and editor play mode) running when the window loses
+        // focus — jam builds and MCP-driven testing both want this.
+        PlayerSettings.runInBackground = true;
 
         EnsureFolders();                 // duty 1
         EnsureLayers();                  // duty 2
@@ -350,6 +355,7 @@ public static class CPU100PrototypeSceneBuilder
             GameObject go = GetOrCreateChild(parent, spec.goName);
             go.transform.localPosition = new Vector3(spec.pos.x, spec.pos.y, 0f);
             go.transform.localScale = Vector3.one * spec.scale;
+            if (spec.type == DesktopIconType.Accelerator) r.acceleratorIcon = go.transform;
 
             DesktopIcon icon = GetOrAddComponent<DesktopIcon>(go);
             icon.iconName = spec.iconName;
@@ -764,6 +770,7 @@ public static class CPU100PrototypeSceneBuilder
         r.glitchBounds.glitchRight = r.glitchRight;
         r.glitchBounds.glitchTop = r.glitchTop;
         r.glitchBounds.glitchBottom = r.glitchBottom;
+        r.glitchBounds.shrinkTarget = r.acceleratorIcon;
         Dirty(r.glitchBounds);
 
         r.player.interference = r.interference;

@@ -3935,9 +3935,10 @@ MonoBehaviour:
   glitchRight: {fileID: 2010073910}
   glitchTop: {fileID: 1266675013}
   glitchBottom: {fileID: 642946014}
+  shrinkTarget: {fileID: 396491878}
+  safeMargin: {x: 1.6, y: 1.4}
+  maxCloseFraction: 0.85
   encroachStartCpu: 30
-  maxHorizontalEncroach: 3.2
-  maxVerticalEncroach: 2
   hazardCpuPerSecond: 6
   pushImpulse: 5
   corruptionCheckInterval: 0.5
@@ -12273,6 +12274,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CursorInteractor
   maxRadius: 2.5
   showRangeDebug: 1
+  ghostAlpha: 0.4
   player: {fileID: 1032948309}
   installZone: {fileID: 1146015234}
   worldCamera: {fileID: 44593348}

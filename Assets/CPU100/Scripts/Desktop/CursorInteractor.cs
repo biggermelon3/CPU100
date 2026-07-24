@@ -5,10 +5,15 @@ using UnityEngine.InputSystem;
 // Virtual mouse that lives on child GO "VirtualCursor" under the Player.
 // The real mouse position is projected into the world and clamped to a circle of
 // maxRadius around the player; ALL world interaction uses that clamped position.
+// The OS cursor is hidden while playing: inside the ring only the custom cursor
+// shows, and when the real mouse leaves the ring a semi-transparent ghost cursor
+// (a top-most UI Image, so it stays visible over the taskbar) marks the real
+// mouse position while the custom cursor stays pinned to the ring edge.
 public class CursorInteractor : MonoBehaviour
 {
     public float maxRadius = 2.5f;
     public bool showRangeDebug = true;
+    public float ghostAlpha = 0.4f;           // real-mouse ghost shown outside the ring
     public PlayerController2D player;         // fallback GetComponentInParent
     public SoftwareInstallZone installZone;   // fallback FindFirstObjectByType
     public Camera worldCamera;                // fallback Camera.main
@@ -22,6 +27,11 @@ public class CursorInteractor : MonoBehaviour
     Transform cursorSprite;
     Transform rangeRing;
     SpriteRenderer rangeRingRenderer;
+    RectTransform ghostCursor;
+    UnityEngine.UI.Image ghostImage;
+    bool osCursorHidden;
+    bool mouseInsideRadius = true;
+    Vector2 lastScreenPos;
     ContactFilter2D overlapFilter;
     readonly Collider2D[] overlapBuffer = new Collider2D[16];
 
@@ -78,6 +88,10 @@ public class CursorInteractor : MonoBehaviour
     {
         if (gameState != null && gameState.State != GameState.Playing)
         {
+            // Result screens need the OS cursor back for the restart buttons.
+            SetOsCursorHidden(false);
+            if (ghostCursor != null && ghostCursor.gameObject.activeSelf)
+                ghostCursor.gameObject.SetActive(false);
             // Game froze mid-drag: return the icon home so it is not left floating.
             if (draggedIcon != null)
             {
@@ -90,7 +104,9 @@ public class CursorInteractor : MonoBehaviour
         var mouse = Mouse.current;
         if (mouse == null) return;
 
+        SetOsCursorHidden(true);
         UpdateCursorPosition(mouse);
+        UpdateGhost();
 
         if (draggedIcon != null)
         {
@@ -124,22 +140,78 @@ public class CursorInteractor : MonoBehaviour
     void UpdateCursorPosition(Mouse mouse)
     {
         Vector2 screenPos = mouse.position.ReadValue();
+        lastScreenPos = screenPos;
         Vector3 world = worldCamera != null
             ? worldCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f))
             : (Vector3)screenPos;
         world.z = 0f;
 
+        mouseInsideRadius = true;
         if (player != null)
         {
             Vector2 center = player.transform.position;
             Vector2 offset = (Vector2)world - center;
             if (offset.sqrMagnitude > maxRadius * maxRadius)
+            {
+                mouseInsideRadius = false;
                 world = center + offset.normalized * maxRadius;
+            }
         }
 
         world.z = 0f;
         transform.position = world;
         CursorWorldPos = world;
+    }
+
+    void SetOsCursorHidden(bool hidden)
+    {
+        if (osCursorHidden == hidden) return;
+        osCursorHidden = hidden;
+        Cursor.visible = !hidden;
+    }
+
+    // Ghost is parented to the UI canvas as the LAST sibling so it renders above
+    // the taskbar/CPU window; raycastTarget stays off so it never eats clicks.
+    void EnsureGhost()
+    {
+        if (ghostCursor != null) return;
+        var canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        var existing = canvas.transform.Find("RealMouseGhost");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("RealMouseGhost");
+        ghostCursor = go.GetComponent<RectTransform>();
+        if (ghostCursor == null) ghostCursor = go.AddComponent<RectTransform>();
+        ghostCursor.SetParent(canvas.transform, false);
+        ghostCursor.SetAsLastSibling();
+        ghostCursor.pivot = new Vector2(0.15f, 0.9f); // matches the cursor sprite hotspot
+        ghostCursor.sizeDelta = new Vector2(26f, 26f);
+
+        ghostImage = go.GetComponent<UnityEngine.UI.Image>();
+        if (ghostImage == null) ghostImage = go.AddComponent<UnityEngine.UI.Image>();
+        ghostImage.sprite = PlaceholderSpriteFactory.GetCursor();
+        ghostImage.color = new Color(1f, 1f, 1f, ghostAlpha);
+        ghostImage.raycastTarget = false;
+
+        go.SetActive(false);
+    }
+
+    void UpdateGhost()
+    {
+        EnsureGhost();
+        if (ghostCursor == null) return;
+
+        bool show = !mouseInsideRadius;
+        if (ghostCursor.gameObject.activeSelf != show)
+            ghostCursor.gameObject.SetActive(show);
+        // Overlay-canvas RectTransform.position is in screen pixels.
+        if (show) ghostCursor.position = new Vector3(lastScreenPos.x, lastScreenPos.y, 0f);
+    }
+
+    void OnDisable()
+    {
+        SetOsCursorHidden(false);
+        if (ghostCursor != null) ghostCursor.gameObject.SetActive(false);
     }
 
     void HandlePress()

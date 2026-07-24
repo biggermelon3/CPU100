@@ -1,6 +1,9 @@
 using UnityEngine;
 
 // Four glitch/noise zones that encroach from the screen edges as CPU rises.
+// The safe area does NOT shrink toward the screen center: each edge closes in
+// on a small margin box around the System Booster (shrinkTarget), so the last
+// safe spot on the desktop is the win icon itself.
 // Zones hurt the player on contact (hazard CPU load + knockback) and corrupt
 // desktop icons they cover. This file also contains the runtime-only GlitchZone
 // relay component (contract-sanctioned exception to one-class-per-file).
@@ -19,17 +22,22 @@ public class GlitchBoundsController : MonoBehaviour
     public Transform glitchRight;
     public Transform glitchTop;
     public Transform glitchBottom;
+    public Transform shrinkTarget;        // builder wires the Accelerator icon; fallback: DesktopIcon.All lookup
+    public Vector2 safeMargin = new Vector2(1.6f, 1.4f); // half-extents of the final safe box around the target
+    public float maxCloseFraction = 0.85f; // fraction of each edge's travel completed at CPU 100
     public float encroachStartCpu = 30f;
-    public float maxHorizontalEncroach = 3.2f;
-    public float maxVerticalEncroach = 2.0f;
     public float hazardCpuPerSecond = 6f;
     public float pushImpulse = 5f;
     public float corruptionCheckInterval = 0.5f;
 
     public bool Frozen { get; set; }
 
-    float currentH;                // smoothed horizontal encroach
-    float currentV;                // smoothed vertical encroach
+    // Smoothed SAFE-area boundary edges (world coords), start at the screen edges.
+    float edgeLeft = -WorldHalfWidth;
+    float edgeRight = WorldHalfWidth;
+    float edgeTop = WorldHalfHeight;
+    float edgeBottom = -WorldHalfHeight;
+    Transform resolvedTarget;      // lazily found Accelerator icon when shrinkTarget unwired
     bool playerTouching;           // set by GlitchZone relays, cleared each physics step
     bool hazardCleared;            // ensures SetHazardLoad(0) fires once when frozen
     float flickerTimer;
@@ -132,12 +140,17 @@ public class GlitchBoundsController : MonoBehaviour
         }
         hazardCleared = false;
 
-        // Encroach target from CPU, smoothed growth.
+        // Each safe-area edge interpolates from the screen edge toward the margin
+        // box around the shrink target, then is smoothed with MoveTowards.
         float cpu = cpuManager != null ? cpuManager.CurrentCpu : 0f;
         float range = Mathf.Max(1f, 100f - encroachStartCpu);
-        float t = Mathf.Clamp01((cpu - encroachStartCpu) / range);
-        currentH = Mathf.MoveTowards(currentH, Mathf.Lerp(0f, maxHorizontalEncroach, t), Time.deltaTime * GrowthSpeed);
-        currentV = Mathf.MoveTowards(currentV, Mathf.Lerp(0f, maxVerticalEncroach, t), Time.deltaTime * GrowthSpeed);
+        float t = Mathf.Clamp01((cpu - encroachStartCpu) / range) * maxCloseFraction;
+        Vector2 c = ShrinkCenter();
+        float step = Time.deltaTime * GrowthSpeed;
+        edgeLeft = Mathf.MoveTowards(edgeLeft, Mathf.Lerp(-WorldHalfWidth, c.x - safeMargin.x, t), step);
+        edgeRight = Mathf.MoveTowards(edgeRight, Mathf.Lerp(WorldHalfWidth, c.x + safeMargin.x, t), step);
+        edgeTop = Mathf.MoveTowards(edgeTop, Mathf.Lerp(WorldHalfHeight, c.y + safeMargin.y, t), step);
+        edgeBottom = Mathf.MoveTowards(edgeBottom, Mathf.Lerp(-WorldHalfHeight, c.y - safeMargin.y, t), step);
 
         ApplyZoneGeometry();
         UpdateFlicker();
@@ -170,31 +183,57 @@ public class GlitchBoundsController : MonoBehaviour
         }
     }
 
+    // Safe area converges on the System Booster so the endgame path leads there.
+    Vector2 ShrinkCenter()
+    {
+        if (shrinkTarget != null) return shrinkTarget.position;
+        if (resolvedTarget == null)
+        {
+            var all = DesktopIcon.All;
+            if (all != null)
+            {
+                for (int i = 0; i < all.Count; i++)
+                {
+                    var icon = all[i];
+                    if (icon != null && icon.iconType == DesktopIconType.Accelerator)
+                    {
+                        resolvedTarget = icon.transform;
+                        break;
+                    }
+                }
+            }
+        }
+        return resolvedTarget != null ? (Vector2)resolvedTarget.position : Vector2.zero;
+    }
+
     // Sprites are 1x1 world units, so localScale is the zone's world size.
+    // Each zone fills the strip between its screen edge and its safe-area edge.
     void ApplyZoneGeometry()
     {
-        float sx = Mathf.Max(currentH, MinZoneScale);
-        float sy = Mathf.Max(currentV, MinZoneScale);
+        float wLeft = Mathf.Max(edgeLeft + WorldHalfWidth, MinZoneScale);
+        float wRight = Mathf.Max(WorldHalfWidth - edgeRight, MinZoneScale);
+        float hTop = Mathf.Max(WorldHalfHeight - edgeTop, MinZoneScale);
+        float hBottom = Mathf.Max(edgeBottom + WorldHalfHeight, MinZoneScale);
 
         if (glitchLeft != null)
         {
-            glitchLeft.localScale = new Vector3(sx, WorldHalfHeight * 2f, 1f);
-            glitchLeft.position = new Vector3(-WorldHalfWidth + currentH * 0.5f, 0f, 0f);
+            glitchLeft.localScale = new Vector3(wLeft, WorldHalfHeight * 2f, 1f);
+            glitchLeft.position = new Vector3(-WorldHalfWidth + wLeft * 0.5f, 0f, 0f);
         }
         if (glitchRight != null)
         {
-            glitchRight.localScale = new Vector3(sx, WorldHalfHeight * 2f, 1f);
-            glitchRight.position = new Vector3(WorldHalfWidth - currentH * 0.5f, 0f, 0f);
+            glitchRight.localScale = new Vector3(wRight, WorldHalfHeight * 2f, 1f);
+            glitchRight.position = new Vector3(WorldHalfWidth - wRight * 0.5f, 0f, 0f);
         }
         if (glitchTop != null)
         {
-            glitchTop.localScale = new Vector3(WorldHalfWidth * 2f, sy, 1f);
-            glitchTop.position = new Vector3(0f, WorldHalfHeight - currentV * 0.5f, 0f);
+            glitchTop.localScale = new Vector3(WorldHalfWidth * 2f, hTop, 1f);
+            glitchTop.position = new Vector3(0f, WorldHalfHeight - hTop * 0.5f, 0f);
         }
         if (glitchBottom != null)
         {
-            glitchBottom.localScale = new Vector3(WorldHalfWidth * 2f, sy, 1f);
-            glitchBottom.position = new Vector3(0f, -WorldHalfHeight + currentV * 0.5f, 0f);
+            glitchBottom.localScale = new Vector3(WorldHalfWidth * 2f, hBottom, 1f);
+            glitchBottom.position = new Vector3(0f, -WorldHalfHeight + hBottom * 0.5f, 0f);
         }
     }
 

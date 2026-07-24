@@ -302,6 +302,11 @@ public DesktopIcon DraggedIcon { get; }
 - Update (only when `gameState.State == Playing`): read `Mouse.current.position`,
   `worldCamera.ScreenToWorldPoint`, z=0, clamp into circle of `maxRadius` around player,
   set `transform.position`. All world interaction uses this clamped position.
+- OS cursor hidden (`Cursor.visible = false`) while Playing, restored on Won/Failed and
+  OnDisable. When the real mouse is outside the ring, a semi-transparent ghost cursor
+  (UI Image `RealMouseGhost`, last sibling under the canvas, raycastTarget=false, alpha
+  `ghostAlpha`=0.4) marks the real mouse screen position; inside the ring it is hidden
+  and only the custom cursor sprite (which then tracks the mouse exactly) shows.
 - Skip ALL world interaction while `EventSystem.current != null &&
   EventSystem.current.IsPointerOverGameObject()` (needs `using UnityEngine.EventSystems;`).
 - Press LMB: `Physics2D.OverlapPoint(CursorWorldPos)` (buffer overload; any layer,
@@ -331,8 +336,10 @@ public CPUManager cpuManager; public PlayerController2D player; public GameState
 public Transform glitchLeft, glitchRight, glitchTop, glitchBottom;
        // builder-wired; Awake fallback: find children named GlitchLeft/... ; if still
        // missing, create them as own children with SpriteRenderer(order 400)+BoxCollider2D(isTrigger)
+public Transform shrinkTarget;            // Accelerator icon: the safe area converges HERE, not on screen center
+public Vector2 safeMargin = new Vector2(1.6f, 1.4f);
+public float maxCloseFraction = 0.85f;
 public float encroachStartCpu = 30f;
-public float maxHorizontalEncroach = 3.2f, maxVerticalEncroach = 2.0f;
 public float hazardCpuPerSecond = 6f, pushImpulse = 5f;
 public float corruptionCheckInterval = 0.5f;
 public bool Frozen { get; set; }
@@ -342,10 +349,12 @@ public void PlayerTouchedZone(Vector2 pushDirection, bool isEnter); // called by
   (`zone.gameObject.AddComponent<GlitchZone>().controller = this;` if not present) and a
   `PlaceholderVisual` is NOT required — assign noise sprite directly from factory at runtime.
 - Zone geometry every frame (world edges ±9.6 / ±5.4, sprite = 1×1 unit → use localScale):
-  encroach eH/eV = `Mathf.Lerp(0, max, Mathf.Clamp01((cpu - 30) / 70))`, smoothed with
-  `Mathf.MoveTowards(current, target, dt * 1.5f)`. Left zone: scale (eH, 10.8, 1),
-  pos (-9.6 + eH/2, 0); right mirrored; top: scale (19.2, eV, 1), pos (0, 5.4 - eV/2);
-  bottom mirrored (pos y = -5.4 + eV/2). Hide zone (scale x/y ≥ 0.01 floor) when 0.
+  the SAFE AREA shrinks toward `shrinkTarget` (the System Booster), NOT the screen center.
+  With t = `Clamp01((cpu - 30) / 70) * maxCloseFraction` and C = shrinkTarget.position,
+  each safe edge lerps independently from its screen edge to the margin box around C
+  (e.g. left edge: `Lerp(-9.6, C.x - safeMargin.x, t)`), smoothed with
+  `MoveTowards(current, target, dt * 1.5f)`. Each zone fills the strip between its
+  screen edge and its safe edge. Hide zone (scale x/y ≥ 0.01 floor) when 0.
   Alpha flicker: every ~0.1 s randomize sprite alpha 0.35–0.6.
 - Player contact: GlitchZone relays OnTriggerEnter2D/OnTriggerStay2D (filter
   `other.CompareTag("Player")`) to `PlayerTouchedZone(dir, ...)` with push direction =
