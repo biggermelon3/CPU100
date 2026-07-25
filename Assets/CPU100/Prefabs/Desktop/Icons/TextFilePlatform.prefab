@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: New Text Document.txt
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: -8141039424203452306, guid: 502df70107b684a42b5a3eb31a928d16, type: 3}
   iconType: 1
   isPlatform: 1
   canDrag: 0
@@ -532,7 +532,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.07905138, y: 0.07905138, z: 0.07905138}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2329477942867772013}
@@ -584,7 +584,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 10
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -8141039424203452306, guid: 502df70107b684a42b5a3eb31a928d16, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -592,7 +592,7 @@ SpriteRenderer:
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1 &8812118772749516665

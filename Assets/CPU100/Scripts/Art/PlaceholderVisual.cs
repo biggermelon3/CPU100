@@ -32,12 +32,13 @@ public class PlaceholderVisual : MonoBehaviour
     // (AddComponent runs Awake with default field values under [ExecuteAlways]).
     public void Apply()
     {
-        Sprite sprite = SpriteForKind(kind);
-
         var sr = GetComponent<SpriteRenderer>();
         if (sr != null)
         {
-            sr.sprite = sprite;
+            // Keep authored/imported art. Only repair missing procedural placeholders,
+            // whose DontSave sprites disappear after scene reloads.
+            if (sr.sprite == null || (sr.sprite.hideFlags & HideFlags.DontSave) != 0)
+                sr.sprite = SpriteForKind(kind);
             sr.color = tint;
             return;
         }
@@ -45,7 +46,8 @@ public class PlaceholderVisual : MonoBehaviour
         var image = GetComponent<UnityEngine.UI.Image>();
         if (image != null)
         {
-            image.sprite = sprite;
+            if (image.sprite == null || (image.sprite.hideFlags & HideFlags.DontSave) != 0)
+                image.sprite = SpriteForKind(kind);
             image.color = tint;
         }
     }

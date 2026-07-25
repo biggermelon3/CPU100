@@ -316,6 +316,16 @@ public static class CPU100PrototypeSceneBuilder
         wallpaper.transform.localPosition = Vector3.zero;
         SpriteRenderer wallpaperSr = GetOrAddComponent<SpriteRenderer>(wallpaper);
         wallpaperSr.sortingOrder = -100;
+        Sprite importedWallpaper = LoadLargestSpriteAtPath(
+            "Assets/CPU100/Art/Wallpaper/WallPaper1.png");
+        if (importedWallpaper != null)
+        {
+            wallpaperSr.sprite = importedWallpaper;
+            float coverScale = Mathf.Max(
+                19.2f / Mathf.Max(0.001f, importedWallpaper.bounds.size.x),
+                10.8f / Mathf.Max(0.001f, importedWallpaper.bounds.size.y));
+            wallpaper.transform.localScale = Vector3.one * coverScale;
+        }
         ConfigurePlaceholder(wallpaper, PlaceholderVisualKind.Wallpaper, Color.white);
         Dirty(wallpaperSr);
 
@@ -986,6 +996,21 @@ public static class CPU100PrototypeSceneBuilder
         // re-apply so the saved scene matches the configured kind/tint on the first run too.
         visual.Apply();
         Dirty(visual);
+    }
+
+    static Sprite LoadLargestSpriteAtPath(string path)
+    {
+        Object[] assets = AssetDatabase.LoadAllAssetsAtPath(path);
+        Sprite largest = null;
+        for (int i = 0; i < assets.Length; i++)
+        {
+            Sprite sprite = assets[i] as Sprite;
+            if (sprite != null &&
+                (largest == null || sprite.rect.width * sprite.rect.height >
+                 largest.rect.width * largest.rect.height))
+                largest = sprite;
+        }
+        return largest;
     }
 
     static Color Hex(string hex)

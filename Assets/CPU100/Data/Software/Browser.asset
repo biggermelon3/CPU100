@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Browser
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Browser
-  icon: {fileID: 0}
+  icon: {fileID: 4449056192509115828, guid: c3802a3346bd0bd429c9c31be4b5b1db, type: 3}
   abilityType: 1
   sideEffectType: 0
   startupCpuCost: 5

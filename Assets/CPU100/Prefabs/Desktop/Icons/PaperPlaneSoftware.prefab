@@ -323,7 +323,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: Paper Plane.exe
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 7028578073694648011, guid: a573f1f764f77644aad1019af5a451f2, type: 3}
   iconType: 4
   isPlatform: 1
   canDrag: 1
@@ -429,7 +429,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.055309735, y: 0.055309735, z: 0.055309735}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2042616142149340892}
@@ -481,7 +481,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 10
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 7028578073694648011, guid: a573f1f764f77644aad1019af5a451f2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

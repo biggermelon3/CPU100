@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Shield
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Shield
-  icon: {fileID: 0}
+  icon: {fileID: -6717884257390833292, guid: ab5568c2a9fdbb74e8f426de53c0ab22, type: 3}
   abilityType: 4
   sideEffectType: 0
   startupCpuCost: 12
