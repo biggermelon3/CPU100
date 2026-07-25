@@ -10,6 +10,7 @@ public class SoftwareInventory : MonoBehaviour
 {
     public CPUManager cpuManager;
     public PlayerController2D player;
+    public SystemInteractionAudio interactionAudio;
 
     public const int Capacity = 3;
 
@@ -67,6 +68,7 @@ public class SoftwareInventory : MonoBehaviour
     {
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
         if (player == null) player = FindFirstObjectByType<PlayerController2D>();
+        if (interactionAudio == null) interactionAudio = FindFirstObjectByType<SystemInteractionAudio>();
     }
 
     private void Update()
@@ -96,6 +98,7 @@ public class SoftwareInventory : MonoBehaviour
                 slots[i] = new SoftwareRuntimeItem(data);
                 LastInstalledIndex = i;
                 OnInventoryChanged?.Invoke();
+                if (interactionAudio != null) interactionAudio.PlayPickup();
                 return true;
             }
         }
@@ -130,6 +133,7 @@ public class SoftwareInventory : MonoBehaviour
         RecomputeRunningLoad();
         RefreshPassiveAbilities();
         OnInventoryChanged?.Invoke();
+        if (interactionAudio != null) interactionAudio.PlayInstall();
         return true;
     }
 
@@ -148,6 +152,7 @@ public class SoftwareInventory : MonoBehaviour
 
         item.State = SoftwareState.Deleted;
         slots[index] = null; // permanent — no way to reinstall
+        if (interactionAudio != null) interactionAudio.PlayDelete();
 
         if (selectedIndex == index)
         {

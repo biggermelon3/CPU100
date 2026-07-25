@@ -15,7 +15,7 @@ MonoBehaviour:
   softwareName: Game Console
   description: Grants a double jump while it keeps running. No key needed - it just
     works.
-  icon: {fileID: 0}
+  icon: {fileID: -8209862322039740348, guid: a4edebe3a280eb44f946b39435e18661, type: 3}
   abilityType: 6
   sideEffectType: 0
   startupCpuCost: 10

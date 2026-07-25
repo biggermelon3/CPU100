@@ -32,7 +32,9 @@ public static class CPU100IconArtBinder
         new Binding("StartFolder", "Folder.png"),
         new Binding("PaperPlaneSoftware", "Plane.png", "PaperPlane.asset"),
         new Binding("TextFilePlatform", "NewTextDoc.png"),
-        new Binding("ShieldSoftware", "Shield.png", "Shield.asset")
+        new Binding("ShieldSoftware", "Shield.png", "Shield.asset"),
+        new Binding("RecycleBin", "Recycle Bin.png"),
+        new Binding("SystemFile", "SystemSetting.png")
     };
 
     [InitializeOnLoadMethod]

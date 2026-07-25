@@ -47,6 +47,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8252367640092192437}
   - component: {fileID: 8850934553789640067}
+  - component: {fileID: 3910284618872630045}
   m_Layer: 0
   m_Name: SoftwareInventory
   m_TagString: Untagged
@@ -83,6 +84,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareInventory
   cpuManager: {fileID: 256419341059262600}
   player: {fileID: 0}
+  interactionAudio: {fileID: 3910284618872630045}
+--- !u!114 &3910284618872630045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1298425773255593682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d9ce224c35a47e1879d99a25cff2dbc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SystemInteractionAudio
+  deleteSfx: {fileID: 8300000, guid: f8b42c4e77ac98a47807920a8f9f2368, type: 3}
+  hoverSfx: {fileID: 8300000, guid: 1ad966ba8368e0246876901e3c7b21eb, type: 3}
+  installSfx: {fileID: 8300000, guid: 2703e65919d90b14293b53ed06146580, type: 3}
+  mouseClickSfx: {fileID: 8300000, guid: 87f030e0a2d5efa48a1b08f0266dd020, type: 3}
+  pickupSfx: {fileID: 8300000, guid: 464978a06fd5cf640b8092bccc601a3c, type: 3}
+  volume: 0.7
+  hoverVolume: 0.45
+  mouseClickVolume: 0.5
 --- !u!1 &3548703644646387163
 GameObject:
   m_ObjectHideFlags: 0
@@ -130,6 +152,7 @@ MonoBehaviour:
   cpuManager: {fileID: 256419341059262600}
   player: {fileID: 0}
   gameState: {fileID: 4505373283310181556}
+  interactionAudio: {fileID: 3910284618872630045}
   glitchLeft: {fileID: 0}
   glitchRight: {fileID: 0}
   glitchTop: {fileID: 0}
@@ -151,6 +174,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2878248587541997345}
   - component: {fileID: 256419341059262600}
+  - component: {fileID: 7819352840194621732}
   m_Layer: 0
   m_Name: CPUManager
   m_TagString: Untagged
@@ -187,6 +211,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CPUManager
   baseIncreasePerSecond: 0.35
   softwareInventory: {fileID: 8850934553789640067}
+--- !u!114 &7819352840194621732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6088197918988318913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b79fc859b8c44c14ae98cc02556d2e9b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CpuAdaptiveMusic
+  cpuManager: {fileID: 256419341059262600}
+  baseTrack: {fileID: 8300000, guid: 735f9e07454f82c47bb9f88dd59a8668, type: 3}
+  pulseTrack: {fileID: 8300000, guid: 8682b9960d09f5f4c8c365595638cd20, type: 3}
+  dangerTrack: {fileID: 8300000, guid: 16c67bd079414da41aad0e9c5b649a07, type: 3}
+  glitchTrack: {fileID: 8300000, guid: 5a478c26b415fc4498274ea2f1163714, type: 3}
+  stageGlitchSfx: {fileID: 8300000, guid: d2cd82ee085ebd94ab50fef84b498cfd, type: 3}
+  hazardGlitchLoop: {fileID: 8300000, guid: 9f0fd5afc54e26c44b2927dd939eb3f2, type: 3}
+  blueScreenEndingSfx: {fileID: 8300000, guid: 581b6ab07f814f04f99a98158ef9465c, type: 3}
+  repairSuccessSfx: {fileID: 8300000, guid: 0e1ab8e0808f22148a050823b5c78420, type: 3}
+  masterVolume: 0.75
+  pulseVolume: 0.8
+  dangerVolume: 0.8
+  glitchVolume: 0.8
+  stageGlitchSfxVolume: 0.8
+  hazardGlitchMaxVolume: 0.7
+  pulseCpu: 30
+  dangerCpu: 60
+  glitchCpu: 80
+  cpuFadeRange: 8
+  volumeFadeSeconds: 1.25
+  endingFadeSeconds: 0.8
 --- !u!1 &6376861063537217253
 GameObject:
   m_ObjectHideFlags: 0
@@ -239,7 +296,7 @@ MonoBehaviour:
   cpuManager: {fileID: 256419341059262600}
   temporaryIconsParent: {fileID: 0}
   tempIconLifetime: 5
-  shieldDuration: 2.5
+  shieldDuration: 5
   hourglassDuration: 5
   hourglassGrowthMultiplier: 0.3
 --- !u!1 &6448782106423895922
@@ -292,6 +349,7 @@ MonoBehaviour:
   glitchBounds: {fileID: 7717671039232471718}
   resultUI: {fileID: 0}
   blueScreenDelay: 0.8
+  blueScreenAudioLead: 0.5
 --- !u!1 &8564688899509967979
 GameObject:
   m_ObjectHideFlags: 0

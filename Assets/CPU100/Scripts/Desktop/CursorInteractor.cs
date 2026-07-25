@@ -13,7 +13,7 @@ public class CursorInteractor : MonoBehaviour
 {
     public float maxRadius = 2.5f;
     public bool showRangeDebug = true;
-    public float ghostAlpha = 0.4f;           // real-mouse ghost shown outside the ring
+    public float ghostAlpha = 0.85f;          // real-mouse ghost shown outside the ring
     public PlayerController2D player;         // fallback GetComponentInParent
     public SoftwareInstallZone installZone;   // fallback FindFirstObjectByType
     public Camera worldCamera;                // fallback Camera.main
@@ -225,7 +225,7 @@ public class CursorInteractor : MonoBehaviour
         ghostCursor.SetParent(canvas.transform, false);
         ghostCursor.SetAsLastSibling();
         ghostCursor.pivot = new Vector2(0.15f, 0.9f); // matches the cursor sprite hotspot
-        ghostCursor.sizeDelta = new Vector2(26f, 26f);
+        ghostCursor.sizeDelta = new Vector2(36f, 36f);
 
         ghostImage = go.GetComponent<UnityEngine.UI.Image>();
         if (ghostImage == null) ghostImage = go.AddComponent<UnityEngine.UI.Image>();
@@ -326,10 +326,13 @@ public class CursorInteractor : MonoBehaviour
         if (installed) TriggerInstallFlyEffect(icon); // before EndDrag hides the icon
         icon.EndDrag(installed);
 
-        // A repositioned folder behaves like a desktop item after mouse-up:
-        // it remains selected and keeps the same outline as a clicked static icon.
-        if (!installed && icon.canDrag && !icon.canInstall &&
-            icon.iconType == DesktopIconType.Folder)
+        // Desktop apps and repositioned folders behave like ordinary desktop
+        // items after mouse-up: they retain the same selected outline as a
+        // clicked static icon. Successfully installed apps still disappear.
+        bool keepSelected = icon.iconType == DesktopIconType.Software ||
+                            (icon.canDrag && !icon.canInstall &&
+                             icon.iconType == DesktopIconType.Folder);
+        if (!installed && keepSelected)
         {
             ClearSelection();
             icon.SetState(DesktopIconState.Selected);

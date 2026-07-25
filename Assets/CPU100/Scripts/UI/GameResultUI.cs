@@ -11,10 +11,12 @@ public class GameResultUI : MonoBehaviour
     public Button restartButtonBlue;
     public Button restartButtonWin;
     public GameStateManager gameState;
+    CpuAdaptiveMusic adaptiveMusic;
 
     void Awake()
     {
         if (gameState == null) gameState = FindFirstObjectByType<GameStateManager>();
+        adaptiveMusic = FindFirstObjectByType<CpuAdaptiveMusic>();
 
         // Fallback wiring by builder child names (see contract section 6).
         if (blueScreenPanel == null) blueScreenPanel = FindChildObject(transform, "BlueScreenPanel");
@@ -36,12 +38,22 @@ public class GameResultUI : MonoBehaviour
 
     public void ShowBlueScreen()
     {
+        PlayBlueScreenAudio();
+        CpuGlitchController glitch = FindFirstObjectByType<CpuGlitchController>();
+        if (glitch != null)
+            glitch.StopGlitch();
         if (victoryPanel != null) victoryPanel.SetActive(false);
         if (blueScreenPanel != null) blueScreenPanel.SetActive(true);
     }
 
+    public void PlayBlueScreenAudio()
+    {
+        if (adaptiveMusic != null) adaptiveMusic.PlayBlueScreenEnding();
+    }
+
     public void ShowVictory()
     {
+        if (adaptiveMusic != null) adaptiveMusic.PlayRepairSuccess();
         if (blueScreenPanel != null) blueScreenPanel.SetActive(false);
         if (victoryPanel != null) victoryPanel.SetActive(true);
     }

@@ -23,6 +23,7 @@ public class GameStateManager : MonoBehaviour
     public GlitchBoundsController glitchBounds;
     public GameResultUI resultUI;
     public float blueScreenDelay = 0.8f;
+    public float blueScreenAudioLead = 0.5f;
 
     public GameState State { get { return state; } }
 
@@ -54,14 +55,28 @@ public class GameStateManager : MonoBehaviour
     /// <summary>Idempotent: only acts while Playing.</summary>
     public void TriggerWin()
     {
+        TriggerWin(0f);
+    }
+
+    /// <summary>
+    /// Locks the win immediately, optionally delaying the result panel so a finishing
+    /// animation can remain visible.
+    /// </summary>
+    public void TriggerWin(float resultDelay)
+    {
         if (state != GameState.Playing)
             return;
 
         state = GameState.Won;
         FreezeWorld(won: true);
+        if (cpuManager != null)
+            cpuManager.DrainToZero(1f);
         OnGameStateChanged?.Invoke(state);
 
-        if (resultUI != null)
+        if (resultUI == null) return;
+        if (resultDelay > 0f && isActiveAndEnabled)
+            StartCoroutine(ShowVictoryAfterDelay(resultDelay));
+        else
             resultUI.ShowVictory();
     }
 
@@ -106,8 +121,22 @@ public class GameStateManager : MonoBehaviour
 
     private IEnumerator ShowBlueScreenAfterDelay()
     {
-        yield return new WaitForSeconds(blueScreenDelay);
+        float lead = Mathf.Clamp(blueScreenAudioLead, 0f, blueScreenDelay);
+        float beforeAudio = Mathf.Max(0f, blueScreenDelay - lead);
+        if (beforeAudio > 0f)
+            yield return new WaitForSeconds(beforeAudio);
+        if (resultUI != null)
+            resultUI.PlayBlueScreenAudio();
+        if (lead > 0f)
+            yield return new WaitForSeconds(lead);
         if (resultUI != null)
             resultUI.ShowBlueScreen();
+    }
+
+    private IEnumerator ShowVictoryAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (resultUI != null)
+            resultUI.ShowVictory();
     }
 }

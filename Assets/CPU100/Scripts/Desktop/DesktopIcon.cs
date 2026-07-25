@@ -18,6 +18,8 @@ public class DesktopIcon : MonoBehaviour
     // ---------------- Config (set by the scene builder or CreateRuntimeIcon) ----------------
     public string iconName = "New Icon";
     public Sprite iconSprite;                 // null -> PlaceholderSpriteFactory.GetIconSprite(iconType)
+    public Sprite boosterSprite;              // Accelerator-only animated foreground
+    public Sprite boosterFlameSprite;         // Accelerator-only animated flame
     public DesktopIconType iconType;
     public bool isPlatform = true;
     public bool canDrag;
@@ -48,6 +50,9 @@ public class DesktopIcon : MonoBehaviour
     private SpriteRenderer runningGlowRenderer;
     private SpriteRenderer corruptionOverlayRenderer;
     private TextMesh labelMesh;
+    private Transform boosterHighlightRoot;
+    private Vector3 boosterHighlightBasePosition;
+    private bool boosterLaunching;
     private BoxCollider2D platformCollider;   // the ONLY collider disabled while dragging
 
     private float nextVirusDamageTime;
@@ -89,7 +94,9 @@ public class DesktopIcon : MonoBehaviour
         // must not create their child objects, so artists can edit them directly.
         if (iconType == DesktopIconType.Software)
         {
-            if (!BindExistingSoftwareVisuals())
+            // SpriteRenderer.sprite can invoke Unity's internal bounds callback.
+            // Do not assign it from Awake; missing fallback sprites are filled in Start.
+            if (!BindExistingSoftwareVisuals(false))
                 Debug.LogError("[CPU100] Software icon hierarchy is incomplete: " + name, this);
         }
         else
@@ -107,9 +114,18 @@ public class DesktopIcon : MonoBehaviour
         // existing Software children; it does not create Play Mode objects.
         if (iconType == DesktopIconType.Software)
         {
-            BindExistingSoftwareVisuals();
+            // OnValidate runs inside Unity's consistency pass, where changing a
+            // SpriteRenderer sprite is forbidden.
+            BindExistingSoftwareVisuals(false);
             ApplyStateVisuals();
         }
+    }
+
+    private void Start()
+    {
+        if (iconType != DesktopIconType.Software) return;
+        BindExistingSoftwareVisuals(true);
+        ApplyStateVisuals();
     }
 
     private void OnEnable()
@@ -122,9 +138,19 @@ public class DesktopIcon : MonoBehaviour
         All.Remove(this);
     }
 
+    private void Update()
+    {
+        if (boosterHighlightRoot == null || boosterLaunching || !Application.isPlaying) return;
+
+        float wave = Mathf.Sin(Time.time * 3f);
+        boosterHighlightRoot.localPosition =
+            boosterHighlightBasePosition + Vector3.up * (wave * 0.12f);
+        boosterHighlightRoot.localScale = Vector3.one * (1f + wave * 0.03f);
+    }
+
     // ---------------- Visual construction (edit mode AND play mode, idempotent) ----------------
 
-    private bool BindExistingSoftwareVisuals()
+    private bool BindExistingSoftwareVisuals(bool assignMissingSprites)
     {
         transform.localScale = Vector3.one * iconScale;
 
@@ -157,24 +183,27 @@ public class DesktopIcon : MonoBehaviour
 
         // Bind data to pre-authored renderers only. This method never creates a
         // GameObject or adds a component.
-        if (bodyRenderer.sprite == null ||
-            (bodyRenderer.sprite.hideFlags & HideFlags.DontSave) != 0)
-        bodyRenderer.sprite = ResolveBodySprite();
+        if (assignMissingSprites &&
+            (bodyRenderer.sprite == null ||
+             (bodyRenderer.sprite.hideFlags & HideFlags.DontSave) != 0))
+            bodyRenderer.sprite = ResolveBodySprite();
         label.localPosition = new Vector3(0f, -0.52f, 0f);
         label.localScale = Vector3.one * (1.2f / Mathf.Max(0.01f, iconScale));
         labelMesh.text = iconName;
         labelMesh.characterSize = 0.05f;
+        if (Application.isPlaying)
+            EnsureLabelShadow(label);
         if (shortcutArrowRenderer != null)
         {
-            if (shortcutArrowRenderer.sprite == null)
+            if (assignMissingSprites && shortcutArrowRenderer.sprite == null)
                 shortcutArrowRenderer.sprite = PlaceholderSpriteFactory.GetShortcutArrow();
             shortcutArrowRenderer.gameObject.SetActive(isShortcut);
         }
-        if (selectionOutlineRenderer.sprite == null)
+        if (assignMissingSprites && selectionOutlineRenderer.sprite == null)
             selectionOutlineRenderer.sprite = PlaceholderSpriteFactory.GetSolid(Color.white);
-        if (runningGlowRenderer.sprite == null)
+        if (assignMissingSprites && runningGlowRenderer.sprite == null)
             runningGlowRenderer.sprite = PlaceholderSpriteFactory.GetSolid(Color.white);
-        if (corruptionOverlayRenderer.sprite == null)
+        if (assignMissingSprites && corruptionOverlayRenderer.sprite == null)
             corruptionOverlayRenderer.sprite = PlaceholderSpriteFactory.GetNoise();
 
         return true;
@@ -192,7 +221,10 @@ public class DesktopIcon : MonoBehaviour
         bodyRenderer.sprite = ResolveBodySprite();
 
         // Shortcut arrow overlay.
-        shortcutArrowRenderer = GetOrCreateChildRenderer("ShortcutArrow", new Vector3(-0.32f, -0.18f, 0f), 11);
+        Vector3 shortcutPosition = iconType == DesktopIconType.Accelerator
+            ? new Vector3(-0.5f, -0.4f, 0f)
+            : new Vector3(-0.32f, -0.18f, 0f);
+        shortcutArrowRenderer = GetOrCreateChildRenderer("ShortcutArrow", shortcutPosition, 11);
         shortcutArrowRenderer.transform.localScale = Vector3.one * 0.45f;
         shortcutArrowRenderer.sprite = PlaceholderSpriteFactory.GetShortcutArrow();
         shortcutArrowRenderer.gameObject.SetActive(isShortcut);
@@ -220,6 +252,8 @@ public class DesktopIcon : MonoBehaviour
                 labelRenderer.sortingOrder = 11;
             }
         }
+        if (Application.isPlaying)
+            EnsureLabelShadow(labelTransform);
 
         // Selection outline (behind body).
         selectionOutlineRenderer = GetOrCreateChildRenderer("SelectionOutline", new Vector3(0f, 0.1f, 0f), 9);
@@ -276,6 +310,8 @@ public class DesktopIcon : MonoBehaviour
         }
         else if (iconType == DesktopIconType.Accelerator)
         {
+            EnsureBoosterHighlight();
+
             BoxCollider2D winTrigger = FindRootBoxCollider(trigger: true);
             if (winTrigger == null)
             {
@@ -284,6 +320,32 @@ public class DesktopIcon : MonoBehaviour
             }
             winTrigger.size = new Vector2(1.3f, 1.2f);
         }
+    }
+
+    private void EnsureBoosterHighlight()
+    {
+        boosterHighlightRoot = transform.Find("BoosterHighlight");
+        if (boosterHighlightRoot == null)
+        {
+            var go = new GameObject("BoosterHighlight");
+            boosterHighlightRoot = go.transform;
+            boosterHighlightRoot.SetParent(transform, false);
+        }
+
+        boosterHighlightBasePosition = new Vector3(0f, 0.1f, 0f);
+        boosterHighlightRoot.localPosition = boosterHighlightBasePosition;
+        boosterHighlightRoot.localScale = Vector3.one;
+
+        SpriteRenderer rocket = GetOrCreateNestedRenderer(
+            boosterHighlightRoot, "Rocket", new Vector3(0f, 0.115f, 0f), 13);
+        rocket.sprite = boosterSprite;
+
+        SpriteRenderer flame = GetOrCreateNestedRenderer(
+            boosterHighlightRoot, "Flame", new Vector3(0f, -0.35f, 0f), 13);
+        flame.sprite = boosterFlameSprite;
+
+        boosterHighlightRoot.gameObject.SetActive(
+            boosterSprite != null || boosterFlameSprite != null);
     }
 
     private Sprite ResolveBodySprite()
@@ -317,6 +379,54 @@ public class DesktopIcon : MonoBehaviour
             child.SetParent(transform, false);
         }
         return child;
+    }
+
+    private static SpriteRenderer GetOrCreateNestedRenderer(
+        Transform parent, string childName, Vector3 localPosition, int sortingOrder)
+    {
+        Transform child = parent.Find(childName);
+        if (child == null)
+        {
+            var go = new GameObject(childName);
+            child = go.transform;
+            child.SetParent(parent, false);
+        }
+
+        child.localPosition = localPosition;
+        SpriteRenderer renderer = GetOrAdd<SpriteRenderer>(child.gameObject);
+        renderer.sortingOrder = sortingOrder;
+        return renderer;
+    }
+
+    private void EnsureLabelShadow(Transform labelTransform)
+    {
+        if (labelMesh == null) return;
+
+        Transform child = labelTransform.Find("BlackShadow");
+        if (child == null)
+        {
+            var go = new GameObject("BlackShadow");
+            child = go.transform;
+            child.SetParent(labelTransform, false);
+        }
+
+        child.localPosition = new Vector3(0.022f, -0.022f, 0f);
+        TextMesh shadow = GetOrAdd<TextMesh>(child.gameObject);
+        shadow.text = labelMesh.text;
+        shadow.font = labelMesh.font;
+        shadow.fontSize = labelMesh.fontSize;
+        shadow.fontStyle = labelMesh.fontStyle;
+        shadow.characterSize = labelMesh.characterSize;
+        shadow.anchor = labelMesh.anchor;
+        shadow.alignment = labelMesh.alignment;
+        shadow.richText = labelMesh.richText;
+        shadow.color = Color.black;
+
+        MeshRenderer renderer = child.GetComponent<MeshRenderer>();
+        if (renderer == null) return;
+        if (shadow.font != null)
+            renderer.sharedMaterial = shadow.font.material;
+        renderer.sortingOrder = 10;
     }
 
     private static T GetOrAdd<T>(GameObject go) where T : Component
@@ -518,7 +628,34 @@ public class DesktopIcon : MonoBehaviour
     {
         if (winTriggered || gameStateManager == null) return;
         winTriggered = true;
-        gameStateManager.TriggerWin();
+        const float launchDuration = 0.9f;
+        gameStateManager.TriggerWin(launchDuration);
+        if (isActiveAndEnabled && boosterHighlightRoot != null)
+            StartCoroutine(LaunchBooster(launchDuration));
+    }
+
+    private IEnumerator LaunchBooster(float duration)
+    {
+        boosterLaunching = true;
+        if (shortcutArrowRenderer != null)
+            shortcutArrowRenderer.gameObject.SetActive(false);
+
+        Vector3 from = boosterHighlightRoot.localPosition;
+        Vector3 to = from + Vector3.up * 7f;
+        Vector3 launchScale = boosterHighlightRoot.localScale;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float k = Mathf.Clamp01(elapsed / duration);
+            k *= k; // accelerate upward like a launch
+            boosterHighlightRoot.localPosition = Vector3.LerpUnclamped(from, to, k);
+            boosterHighlightRoot.localScale = Vector3.Lerp(launchScale, Vector3.one * 0.9f, k);
+            yield return null;
+        }
+
+        boosterHighlightRoot.gameObject.SetActive(false);
     }
 
     // ---------------- Runtime factory ----------------

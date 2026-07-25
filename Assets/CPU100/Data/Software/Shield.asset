@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Shield
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Shield
-  description: Raises a shield that blocks and shoves away error files for a short
-    while.
+  description: Temporarily rolls CPU usage back to 5% and freezes it for 5 seconds,
+    then restores the CPU level from when it was activated.
   icon: {fileID: -6717884257390833292, guid: ab5568c2a9fdbb74e8f426de53c0ab22, type: 3}
   abilityType: 4
   sideEffectType: 0
@@ -22,6 +22,6 @@ MonoBehaviour:
   runningCpuLoadPerSecond: 1.5
   closeCpuRelief: 8
   usageCpuCost: 0
-  cooldown: 6
+  cooldown: 15
   canUseRepeatedly: 1
   isSpecialSoftware: 0

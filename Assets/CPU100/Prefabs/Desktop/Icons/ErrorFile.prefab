@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: Error File
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: -6232382674798046433, guid: 23b4fd2d48482bc45a9375618c0f493e, type: 3}
   iconType: 5
   isPlatform: 1
   canDrag: 0
@@ -466,7 +466,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.833333, y: 0.833333, z: 0.833333}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6227262891388204508}

@@ -10,12 +10,14 @@ public class PlayerAnimationController : MonoBehaviour
     static readonly int JumpState = Animator.StringToHash("Jump");
     static readonly int PaperPlaneState = Animator.StringToHash("PaperPlane");
     static readonly int PoisonIdleState = Animator.StringToHash("PoisonIdle");
+    static readonly int AbilityState = Animator.StringToHash("Ability");
 
     Animator animator;
     PlayerController2D player;
     Rigidbody2D body;
     SpriteRenderer spriteRenderer;
     int currentState;
+    float abilityEndTime;
 
     void Awake()
     {
@@ -47,6 +49,8 @@ public class PlayerAnimationController : MonoBehaviour
             nextState = PaperPlaneState;
         else if (!grounded)
             nextState = JumpState;
+        else if (Time.time < abilityEndTime)
+            nextState = AbilityState;
         else if (player.State == PlayerState.Moving)
             nextState = WalkState;
         else
@@ -57,6 +61,19 @@ public class PlayerAnimationController : MonoBehaviour
 
         animator.Play(nextState, 0, 0f);
         currentState = nextState;
+    }
+
+    public bool TryPlayAbility(float duration = 0.5f)
+    {
+        if (player == null || animator == null || !player.IsGrounded ||
+            player.State != PlayerState.Idle ||
+            (body != null && Mathf.Abs(body.linearVelocity.x) >= 0.05f))
+            return false;
+
+        abilityEndTime = Time.time + Mathf.Max(0f, duration);
+        animator.Play(AbilityState, 0, 0f);
+        currentState = AbilityState;
+        return true;
     }
 
     void LateUpdate()

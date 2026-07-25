@@ -17,11 +17,14 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
     SoftwareInventory inventory;
     SoftwareTooltipUI tooltip;
+    SystemInteractionAudio interactionAudio;
     int index = -1;
+    bool hovered;
 
     void Awake()
     {
         tooltip = FindFirstObjectByType<SoftwareTooltipUI>();
+        interactionAudio = FindFirstObjectByType<SystemInteractionAudio>();
         // Fallback wiring by builder child names (see contract section 6).
         if (iconImage == null) iconImage = FindChild<Image>("IconImage");
         if (nameText == null) nameText = FindChild<Text>("NameText");
@@ -53,6 +56,12 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (iconImage != null)
         {
             iconImage.enabled = occupied;
+            iconImage.color = hovered && occupied
+                ? new Color(1f, 1f, 0.82f, 1f)
+                : Color.white;
+            iconImage.transform.localScale = hovered && occupied
+                ? Vector3.one * 1.07f
+                : Vector3.one;
             if (occupied)
             {
                 iconImage.sprite = item.Data.icon != null
@@ -102,12 +111,18 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public void OnPointerEnter(PointerEventData eventData)
     {
         SoftwareRuntimeItem item = GetItem();
-        if (item != null && item.Data != null && tooltip != null)
-            tooltip.Show(this, item);
+        if (item == null || item.Data == null) return;
+
+        hovered = true;
+        Refresh();
+        if (interactionAudio != null) interactionAudio.PlayHover();
+        if (tooltip != null) tooltip.Show(this, item);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        hovered = false;
+        Refresh();
         if (tooltip != null) tooltip.HideIfOwner(this);
     }
 

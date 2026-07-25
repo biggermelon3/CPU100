@@ -18,6 +18,7 @@ public class GlitchBoundsController : MonoBehaviour
     public CPUManager cpuManager;
     public PlayerController2D player;
     public GameStateManager gameState;
+    public SystemInteractionAudio interactionAudio;
     public Transform glitchLeft;
     public Transform glitchRight;
     public Transform glitchTop;
@@ -57,6 +58,7 @@ public class GlitchBoundsController : MonoBehaviour
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
         if (player == null) player = FindFirstObjectByType<PlayerController2D>();
         if (gameState == null) gameState = FindFirstObjectByType<GameStateManager>();
+        if (interactionAudio == null) interactionAudio = FindFirstObjectByType<SystemInteractionAudio>();
 
         glitchLeft = ResolveZone(glitchLeft, "GlitchLeft");
         glitchRight = ResolveZone(glitchRight, "GlitchRight");
@@ -279,6 +281,7 @@ public class GlitchBoundsController : MonoBehaviour
                 ZoneContains(glitchTop, p) || ZoneContains(glitchBottom, p))
             {
                 icon.SetState(DesktopIconState.Corrupted); // sticky inside DesktopIcon
+                if (interactionAudio != null) interactionAudio.PlayDelete();
             }
         }
     }

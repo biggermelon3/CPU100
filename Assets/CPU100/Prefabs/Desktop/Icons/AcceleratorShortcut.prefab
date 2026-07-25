@@ -79,7 +79,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 10
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 1017740624544615418, guid: e8d8383e08c38c4418726db9378c97b7, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -296,7 +296,7 @@ Transform:
   m_GameObject: {fileID: 3644537960257121611}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.32, y: -0.18, z: 0}
+  m_LocalPosition: {x: -0.5, y: -0.4, z: 0}
   m_LocalScale: {x: 0.45, y: 0.45, z: 0.45}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -607,7 +607,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: System Booster.lnk
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 1017740624544615418, guid: e8d8383e08c38c4418726db9378c97b7, type: 3}
+  boosterSprite: {fileID: -453742404825087160, guid: 04230f0cc216bf64bb1c594e93c7f7d7, type: 3}
+  boosterFlameSprite: {fileID: 5798345058414373935, guid: 04230f0cc216bf64bb1c594e93c7f7d7, type: 3}
   iconType: 7
   isPlatform: 1
   canDrag: 0

@@ -28,6 +28,8 @@ public static class CPU100PrototypeSceneBuilder
 
         public GameStateManager gameState;
         public CPUManager cpuManager;
+        public CpuAdaptiveMusic adaptiveMusic;
+        public SystemInteractionAudio interactionAudio;
         public SoftwareInventory inventory;
         public SoftwareAbilityExecutor abilityExecutor;
         public InputInterferenceController interference;
@@ -230,7 +232,11 @@ public static class CPU100PrototypeSceneBuilder
         r.paperPlaneData = EnsureSoftwareAsset(SoFolder + "/PaperPlane.asset", "Paper Plane",
             SoftwareAbilityType.AirDash, 12f, 1.2f, 12f, 2.5f);
         r.shieldData = EnsureSoftwareAsset(SoFolder + "/Shield.asset", "Shield",
-            SoftwareAbilityType.ShieldPush, 12f, 1.5f, 8f, 6f);
+            SoftwareAbilityType.ShieldPush, 12f, 1.5f, 8f, 15f);
+        r.shieldData.description =
+            "Temporarily rolls CPU usage back to 5% and freezes it for 5 seconds, " +
+            "then restores the CPU level from when it was activated.";
+        EditorUtility.SetDirty(r.shieldData);
         r.gameConsoleData = EnsureSoftwareAsset(SoFolder + "/GameConsole.asset", "Game Console",
             SoftwareAbilityType.DoubleJump, 10f, 0.5f, 10f, 0f);
         r.hourglassData = EnsureSoftwareAsset(SoFolder + "/Hourglass.asset", "Hourglass",
@@ -297,8 +303,37 @@ public static class CPU100PrototypeSceneBuilder
         root.transform.position = Vector3.zero;
 
         r.gameState = GetOrAddComponent<GameStateManager>(GetOrCreateChild(root.transform, "GameStateManager"));
-        r.cpuManager = GetOrAddComponent<CPUManager>(GetOrCreateChild(root.transform, "CPUManager"));
-        r.inventory = GetOrAddComponent<SoftwareInventory>(GetOrCreateChild(root.transform, "SoftwareInventory"));
+        GameObject cpuManagerObject = GetOrCreateChild(root.transform, "CPUManager");
+        r.cpuManager = GetOrAddComponent<CPUManager>(cpuManagerObject);
+        r.adaptiveMusic = GetOrAddComponent<CpuAdaptiveMusic>(cpuManagerObject);
+        r.adaptiveMusic.cpuManager = r.cpuManager;
+        r.adaptiveMusic.baseTrack = AssetDatabase.LoadAssetAtPath<AudioClip>(RootFolder + "/Audio/BGM/stage1.wav");
+        r.adaptiveMusic.pulseTrack = AssetDatabase.LoadAssetAtPath<AudioClip>(RootFolder + "/Audio/BGM/stage2.wav");
+        r.adaptiveMusic.dangerTrack = AssetDatabase.LoadAssetAtPath<AudioClip>(RootFolder + "/Audio/BGM/stage3.wav");
+        r.adaptiveMusic.glitchTrack = AssetDatabase.LoadAssetAtPath<AudioClip>(RootFolder + "/Audio/BGM/stage4.wav");
+        r.adaptiveMusic.stageGlitchSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Character/Glitch_Hit.wav");
+        r.adaptiveMusic.hazardGlitchLoop = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Glitch/SFX_Hazard_Glitch_Noise_Loop.wav");
+        r.adaptiveMusic.blueScreenEndingSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Ending/Bluescreen_NEW.mp3");
+        r.adaptiveMusic.repairSuccessSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Ending/Cute_Happy_Ending.mp3");
+        Dirty(r.adaptiveMusic);
+        GameObject inventoryObject = GetOrCreateChild(root.transform, "SoftwareInventory");
+        r.inventory = GetOrAddComponent<SoftwareInventory>(inventoryObject);
+        r.interactionAudio = GetOrAddComponent<SystemInteractionAudio>(inventoryObject);
+        r.interactionAudio.deleteSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/System_interaction/delete.wav");
+        r.interactionAudio.hoverSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/System_interaction/Hover.mp3");
+        r.interactionAudio.installSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/System_interaction/install.wav");
+        r.interactionAudio.mouseClickSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/System_interaction/Mouse_Click.mp3");
+        r.interactionAudio.pickupSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/System_interaction/Pickup_04.wav");
+        Dirty(r.interactionAudio);
         r.abilityExecutor = GetOrAddComponent<SoftwareAbilityExecutor>(GetOrCreateChild(root.transform, "SoftwareAbilityExecutor"));
         r.interference = GetOrAddComponent<InputInterferenceController>(GetOrCreateChild(root.transform, "InputInterferenceController"));
         r.glitchBounds = GetOrAddComponent<GlitchBoundsController>(GetOrCreateChild(root.transform, "GlitchBoundsController"));
@@ -358,10 +393,10 @@ public static class CPU100PrototypeSceneBuilder
     {
         IconSpec[] specs = new IconSpec[]
         {
-            new IconSpec("StartFolder",         "Documents",             DesktopIconType.Folder,      new Vector2(-7.8f, -3.4f), 1.4f, true,  false, false, null),
+            new IconSpec("StartFolder",         "Folder",                DesktopIconType.Folder,      new Vector2(-7.8f, -3.4f), 1.4f, true,  false, false, null),
             new IconSpec("BrowserSoftware",     "Browser.exe",           DesktopIconType.Software,    new Vector2(-6.0f, -3.9f), 1.2f, true,  true,  false, r.browserData),
             new IconSpec("PaperPlaneSoftware",  "Paper Plane.exe",       DesktopIconType.Software,    new Vector2(-2.8f, -3.7f), 1.2f, true,  true,  false, r.paperPlaneData),
-            new IconSpec("TextFilePlatform",    "New Text Document.txt", DesktopIconType.TextFile,    new Vector2(-5.0f, -1.8f), 1.3f, false, false, false, null),
+            new IconSpec("TextFilePlatform",    "Empty File",            DesktopIconType.TextFile,    new Vector2(-5.0f, -1.8f), 1.3f, false, false, false, null),
             new IconSpec("GameConsoleSoftware", "Game Console.exe",      DesktopIconType.Software,    new Vector2(-2.4f, -0.4f), 1.3f, true,  true,  false, r.gameConsoleData),
             new IconSpec("ErrorFile",           "Error File",            DesktopIconType.ErrorFile,   new Vector2(0.4f, -2.6f),  1.3f, false, false, false, null),
             new IconSpec("HourglassSoftware",   "Hourglass.exe",         DesktopIconType.Software,    new Vector2(0.6f, 1.1f),   1.3f, true,  true,  false, r.hourglassData),
@@ -388,10 +423,27 @@ public static class CPU100PrototypeSceneBuilder
             icon.isShortcut = spec.isShortcut;
             icon.softwareData = spec.data;
             icon.iconScale = spec.scale;
+            if (spec.type == DesktopIconType.RecycleBin)
+                icon.iconSprite = LoadLargestSpriteAtPath(
+                    RootFolder + "/Art/Icons/Recycle Bin.png");
+            else if (spec.type == DesktopIconType.SystemFile)
+                icon.iconSprite = LoadLargestSpriteAtPath(
+                    RootFolder + "/Art/Icons/SystemSetting.png");
 
             try
             {
                 icon.EnsureVisuals();
+                if ((spec.type == DesktopIconType.RecycleBin ||
+                     spec.type == DesktopIconType.SystemFile) &&
+                    icon.iconSprite != null)
+                {
+                    Transform body = go.transform.Find("Body");
+                    float largestSide = Mathf.Max(
+                        icon.iconSprite.bounds.size.x,
+                        icon.iconSprite.bounds.size.y);
+                    if (body != null && largestSide > 0.0001f)
+                        body.localScale = Vector3.one / largestSide;
+                }
             }
             catch (System.Exception e)
             {
@@ -814,6 +866,7 @@ public static class CPU100PrototypeSceneBuilder
 
         r.inventory.cpuManager = r.cpuManager;
         r.inventory.player = r.player;
+        r.inventory.interactionAudio = r.interactionAudio;
         Dirty(r.inventory);
 
         r.gameState.cpuManager = r.cpuManager;
@@ -841,6 +894,7 @@ public static class CPU100PrototypeSceneBuilder
         r.glitchBounds.cpuManager = r.cpuManager;
         r.glitchBounds.player = r.player;
         r.glitchBounds.gameState = r.gameState;
+        r.glitchBounds.interactionAudio = r.interactionAudio;
         r.glitchBounds.glitchLeft = r.glitchLeft;
         r.glitchBounds.glitchRight = r.glitchRight;
         r.glitchBounds.glitchTop = r.glitchTop;
@@ -852,6 +906,10 @@ public static class CPU100PrototypeSceneBuilder
         r.player.cpuManager = r.cpuManager;
         r.player.gameState = r.gameState;
         r.player.groundChecker = r.groundChecker;
+        r.player.jumpSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Character/Jump_03.wav");
+        r.player.landingSfx = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            RootFolder + "/Audio/SFX/Character/landing_02.wav");
         Dirty(r.player);
 
         r.installZone.inventory = r.inventory;

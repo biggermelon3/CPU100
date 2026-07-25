@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Listens for the E key and executes the currently selected running software's ability:
 /// Browser spawns a temporary "New Tab.url" platform icon, Paper Plane air-dashes,
-/// Shield activates the player shield. Starts the item's cooldown after each use.
+/// Shield temporarily overrides and freezes CPU. Starts the item's cooldown after each use.
 /// </summary>
 public class SoftwareAbilityExecutor : MonoBehaviour
 {
@@ -17,9 +17,10 @@ public class SoftwareAbilityExecutor : MonoBehaviour
     public Transform temporaryIconsParent;
 
     public float tempIconLifetime = 5f;
-    public float shieldDuration = 2.5f;
+    public float shieldDuration = 5f;
     public float hourglassDuration = 5f;
     [Range(0f, 1f)] public float hourglassGrowthMultiplier = 0.3f;
+    PlayerAnimationController playerAnimation;
 
     private void Awake()
     {
@@ -29,6 +30,7 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         if (gameState == null) gameState = FindFirstObjectByType<GameStateManager>();
         if (interference == null) interference = FindFirstObjectByType<InputInterferenceController>();
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
+        if (player != null) playerAnimation = player.GetComponent<PlayerAnimationController>();
     }
 
     private void Start()
@@ -74,7 +76,8 @@ public class SoftwareAbilityExecutor : MonoBehaviour
                 break;
 
             case SoftwareAbilityType.ShieldPush:
-                if (player != null) player.ActivateShield(shieldDuration);
+                if (cpuManager == null) return;
+                cpuManager.SetTemporaryValueAndFreeze(5f, shieldDuration);
                 break;
 
             case SoftwareAbilityType.CpuSlowdown:
@@ -92,6 +95,12 @@ public class SoftwareAbilityExecutor : MonoBehaviour
             cpuManager.AddCpu(item.Data.usageCpuCost);
 
         item.CooldownRemaining = item.Data.cooldown;
+
+        if (playerAnimation != null &&
+            (item.Data.abilityType == SoftwareAbilityType.SpawnTemporaryIcon ||
+             item.Data.abilityType == SoftwareAbilityType.ShieldPush ||
+             item.Data.abilityType == SoftwareAbilityType.CpuSlowdown))
+            playerAnimation.TryPlayAbility(0.5f);
     }
 
     private void SpawnTemporaryIcon()

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -26,6 +27,9 @@ public class CPUManager : MonoBehaviour
     private float growthSlowdownTimer;
     private float growthMultiplier = 1f;
     private bool maximumFired;
+    private Coroutine drainRoutine;
+    private Coroutine temporaryOverrideRoutine;
+    private bool temporaryValueFrozen;
 
     private void Awake()
     {
@@ -37,7 +41,7 @@ public class CPUManager : MonoBehaviour
 
     private void Update()
     {
-        if (Frozen || maximumFired)
+        if (Frozen || temporaryValueFrozen || maximumFired)
             return;
 
         if (growthSlowdownTimer > 0f)
@@ -70,6 +74,55 @@ public class CPUManager : MonoBehaviour
         ApplyDelta(-amount);
     }
 
+    /// <summary>
+    /// Terminal victory animation. Growth remains frozen, but value and stage events
+    /// continue to fire while the displayed load eases down to zero.
+    /// </summary>
+    public void DrainToZero(float duration)
+    {
+        if (temporaryOverrideRoutine != null)
+        {
+            StopCoroutine(temporaryOverrideRoutine);
+            temporaryOverrideRoutine = null;
+        }
+        temporaryValueFrozen = false;
+        Frozen = true;
+        if (drainRoutine != null)
+            StopCoroutine(drainRoutine);
+
+        if (!isActiveAndEnabled || duration <= 0f)
+        {
+            SetCpuDuringDrain(0f);
+            return;
+        }
+
+        drainRoutine = StartCoroutine(DrainRoutine(duration));
+    }
+
+    /// <summary>
+    /// Temporarily displays a fixed CPU value and blocks all CPU growth/deltas.
+    /// Restores the exact value captured at activation when the duration ends.
+    /// </summary>
+    public void SetTemporaryValueAndFreeze(float temporaryValue, float duration)
+    {
+        if (Frozen || maximumFired || temporaryValueFrozen)
+            return;
+
+        float restoreValue = currentCpu;
+        temporaryValueFrozen = true;
+        SetCpuDuringDrain(temporaryValue);
+
+        if (!isActiveAndEnabled || duration <= 0f)
+        {
+            temporaryValueFrozen = false;
+            SetCpuDuringDrain(restoreValue);
+            return;
+        }
+
+        temporaryOverrideRoutine =
+            StartCoroutine(TemporaryOverrideRoutine(restoreValue, duration));
+    }
+
     /// <summary>Continuous extra load in CPU/second; set by GlitchBoundsController every frame.</summary>
     public void SetHazardLoad(float perSecond)
     {
@@ -78,7 +131,7 @@ public class CPUManager : MonoBehaviour
 
     public void ActivateGrowthSlowdown(float duration, float multiplier)
     {
-        if (Frozen || maximumFired) return;
+        if (Frozen || temporaryValueFrozen || maximumFired) return;
 
         growthSlowdownTimer = Mathf.Max(growthSlowdownTimer, Mathf.Max(0f, duration));
         growthMultiplier = Mathf.Min(growthMultiplier, Mathf.Clamp01(multiplier));
@@ -97,7 +150,7 @@ public class CPUManager : MonoBehaviour
     private void ApplyDelta(float delta)
     {
         // Terminal after the crash event: further calls change nothing.
-        if (Frozen || maximumFired)
+        if (Frozen || temporaryValueFrozen || maximumFired)
             return;
 
         float next = Mathf.Clamp(currentCpu + delta, 0f, 100f);
@@ -123,5 +176,47 @@ public class CPUManager : MonoBehaviour
 
         if (reachedMax)
             OnCpuReachedMaximum?.Invoke();
+    }
+
+    private IEnumerator DrainRoutine(float duration)
+    {
+        float start = currentCpu;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t);
+            SetCpuDuringDrain(Mathf.LerpUnclamped(start, 0f, t));
+            yield return null;
+        }
+
+        SetCpuDuringDrain(0f);
+        drainRoutine = null;
+    }
+
+    private IEnumerator TemporaryOverrideRoutine(float restoreValue, float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        temporaryOverrideRoutine = null;
+        temporaryValueFrozen = false;
+
+        // A terminal game state may have taken ownership while the effect was active.
+        if (!Frozen && !maximumFired)
+            SetCpuDuringDrain(restoreValue);
+    }
+
+    private void SetCpuDuringDrain(float value)
+    {
+        float next = Mathf.Clamp(value, 0f, 100f);
+        if (next == currentCpu) return;
+
+        currentCpu = next;
+        OnCpuChanged?.Invoke(currentCpu);
+
+        CPUStage newStage = StageForValue(currentCpu);
+        if (newStage == currentStage) return;
+        currentStage = newStage;
+        OnCpuStageChanged?.Invoke(currentStage);
     }
 }

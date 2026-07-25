@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4ccbf90f9f3eff4fbe652c5cae10ff3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
-  iconName: New Text Document.txt
+  iconName: Empty File
   iconSprite: {fileID: -8141039424203452306, guid: 502df70107b684a42b5a3eb31a928d16, type: 3}
   iconType: 1
   isPlatform: 1
@@ -401,7 +401,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4266299812252534082}
-  m_Text: New Text Document.txt
+  m_Text: Empty File
   m_OffsetZ: 0
   m_CharacterSize: 0.05
   m_LineSpacing: 1

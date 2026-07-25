@@ -19,6 +19,12 @@ public class PlayerController2D : MonoBehaviour
     [Range(0f, 1f)] public float glideHorizontalMultiplier = 0.75f;
     [Range(0f, 1f)] public float glideGravityScale = 0.25f;
 
+    [Header("Audio")]
+    public AudioClip jumpSfx;
+    public AudioClip landingSfx;
+    [Range(0f, 1f)] public float jumpSfxVolume = 0.45f;
+    [Range(0f, 1f)] public float landingSfxVolume = 0.8f;
+
     public InputInterferenceController interference;
     public CPUManager cpuManager;
     public GameStateManager gameState;
@@ -36,6 +42,8 @@ public class PlayerController2D : MonoBehaviour
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    private AudioSource movementAudioSource;
+    private bool landingArmed;
 
     // Input cached in Update, consumed in FixedUpdate.
     private float horizontalInput;
@@ -58,6 +66,11 @@ public class PlayerController2D : MonoBehaviour
         rb.sleepMode = RigidbodySleepMode2D.NeverSleep;
         normalGravityScale = rb.gravityScale;
         spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
+        movementAudioSource = gameObject.AddComponent<AudioSource>();
+        movementAudioSource.playOnAwake = false;
+        movementAudioSource.spatialBlend = 0f;
+        if (jumpSfx != null) jumpSfx.LoadAudioData();
+        if (landingSfx != null) landingSfx.LoadAudioData();
 
         if (interference == null) interference = FindFirstObjectByType<InputInterferenceController>();
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
@@ -105,6 +118,7 @@ public class PlayerController2D : MonoBehaviour
         else if (jumpBufferCounter > 0f) jumpBufferCounter -= dt;
 
         bool grounded = IsGroundedNow();
+        UpdateLandingAudio(grounded);
         if (grounded)
         {
             coyoteCounter = coyoteTime;
@@ -166,12 +180,14 @@ public class PlayerController2D : MonoBehaviour
         if (jumpBufferCounter > 0f && coyoteCounter > 0f)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
+            PlayMovementSfx(jumpSfx, jumpSfxVolume);
             jumpBufferCounter = 0f;
             coyoteCounter = 0f;
         }
         else if (jumpBufferCounter > 0f && HasDoubleJump && RemainingAirJumps > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVelocity);
+            PlayMovementSfx(jumpSfx, jumpSfxVolume);
             RemainingAirJumps--;
             jumpBufferCounter = 0f;
         }
@@ -182,6 +198,25 @@ public class PlayerController2D : MonoBehaviour
         return groundChecker != null && groundChecker.IsGrounded && rb.linearVelocity.y <= 0.1f;
     }
 
+    private void UpdateLandingAudio(bool grounded)
+    {
+        if (!grounded && rb.linearVelocity.y < -0.2f)
+        {
+            landingArmed = true;
+        }
+        else if (grounded && landingArmed)
+        {
+            landingArmed = false;
+            PlayMovementSfx(landingSfx, landingSfxVolume);
+        }
+    }
+
+    private void PlayMovementSfx(AudioClip clip, float volume)
+    {
+        if (movementAudioSource != null && clip != null)
+            movementAudioSource.PlayOneShot(clip, volume);
+    }
+
     public void Respawn()
     {
         transform.position = SpawnPoint;
@@ -190,6 +225,7 @@ public class PlayerController2D : MonoBehaviour
         knockbackTimer = 0f;
         jumpBufferCounter = 0f;
         coyoteCounter = 0f;
+        landingArmed = false;
         if (cpuManager != null) cpuManager.AddCpu(respawnCpuPenalty);
     }
 

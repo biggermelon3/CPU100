@@ -11,6 +11,8 @@ using UnityEngine.UI;
 public class SoftwareTooltipUI : MonoBehaviour
 {
     public GameStateManager gameState;    // fallback find; tooltip hides off-Play
+    [Tooltip("Window frame used behind the software description.")]
+    public Sprite frameSprite;
     public float width = 280f;
 
     RectTransform panel;
@@ -18,7 +20,9 @@ public class SoftwareTooltipUI : MonoBehaviour
     Text bodyText;
     TaskbarSlotUI owner;
 
-    const float Pad = 10f;
+    const float SidePad = 16f;
+    const float TopPad = 62f;
+    const float BottomPad = 14f;
     const float TitleHeight = 20f;
     // Glyphs are rasterized at fontSize then magnified by the CanvasScaler (~1.5x on
     // high-DPI screens), which blurs small text. Render them 3x and scale the text
@@ -50,16 +54,32 @@ public class SoftwareTooltipUI : MonoBehaviour
         panel.pivot = new Vector2(0.5f, 0f);
 
         Image bg = panelGo.GetComponent<Image>();
-        bg.color = new Color(0.05f, 0.07f, 0.1f, 0.95f);
+        bg.sprite = frameSprite;
+        bg.type = Image.Type.Simple;
+        bg.color = frameSprite != null
+            ? Color.white
+            : new Color(0.05f, 0.07f, 0.1f, 0.95f);
         bg.raycastTarget = false;   // must never steal the pointer from the slot
 
+        var contentBgGo = new GameObject("ContentBackground", typeof(RectTransform), typeof(Image));
+        var contentBgRect = (RectTransform)contentBgGo.transform;
+        contentBgRect.SetParent(panel, false);
+        contentBgRect.anchorMin = Vector2.zero;
+        contentBgRect.anchorMax = Vector2.one;
+        contentBgRect.offsetMin = new Vector2(SidePad - 4f, BottomPad - 4f);
+        contentBgRect.offsetMax = new Vector2(-(SidePad - 4f), -TopPad + 12f);
+
+        Image contentBg = contentBgGo.GetComponent<Image>();
+        contentBg.color = Color.black;
+        contentBg.raycastTarget = false;
+
         titleText = CreateText("Title", 15, FontStyle.Bold, Color.white);
-        titleText.rectTransform.sizeDelta = new Vector2((width - Pad * 2f) * TextCrisp, TitleHeight * TextCrisp);
-        titleText.rectTransform.anchoredPosition = new Vector2(Pad, -Pad);
+        titleText.rectTransform.sizeDelta = new Vector2((width - SidePad * 2f) * TextCrisp, TitleHeight * TextCrisp);
+        titleText.rectTransform.anchoredPosition = new Vector2(SidePad, -TopPad);
 
         bodyText = CreateText("Body", 13, FontStyle.Normal, new Color(0.78f, 0.84f, 0.9f, 1f));
-        bodyText.rectTransform.sizeDelta = new Vector2((width - Pad * 2f) * TextCrisp, 100f * TextCrisp);
-        bodyText.rectTransform.anchoredPosition = new Vector2(Pad, -(Pad + TitleHeight + 4f));
+        bodyText.rectTransform.sizeDelta = new Vector2((width - SidePad * 2f) * TextCrisp, 100f * TextCrisp);
+        bodyText.rectTransform.anchoredPosition = new Vector2(SidePad, -(TopPad + TitleHeight + 4f));
     }
 
     Text CreateText(string childName, int size, FontStyle style, Color color)
@@ -120,6 +140,8 @@ public class SoftwareTooltipUI : MonoBehaviour
                        d.abilityType == SoftwareAbilityType.None;
         if (passive)
             sb.Append("Passive - always on while running\n");
+        else if (d.abilityType == SoftwareAbilityType.ShieldPush)
+            sb.Append("Use [E]: CPU -> 5%, frozen for 5s\n");
         else
             sb.Append("Use [E]: +").Append(Num(d.usageCpuCost)).Append(" CPU per use\n");
 
@@ -141,8 +163,8 @@ public class SoftwareTooltipUI : MonoBehaviour
         // Text.preferredHeight measures in the text's own (3x) units against the rect
         // width set in BuildPanel; divide back into display units for the panel.
         float bodyH = Mathf.Max(16f, bodyText.preferredHeight / TextCrisp);
-        bodyText.rectTransform.sizeDelta = new Vector2((width - Pad * 2f) * TextCrisp, bodyH * TextCrisp);
-        panel.sizeDelta = new Vector2(width, Pad + TitleHeight + 4f + bodyH + Pad);
+        bodyText.rectTransform.sizeDelta = new Vector2((width - SidePad * 2f) * TextCrisp, bodyH * TextCrisp);
+        panel.sizeDelta = new Vector2(width, TopPad + TitleHeight + 4f + bodyH + BottomPad);
 
         // Overlay canvas: world corners are screen pixels. Sit just above the slot,
         // rounded to whole pixels so the bitmap glyphs stay sharp.

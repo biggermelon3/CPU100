@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Drives the fullscreen CPU glitch material (CPU100/CpuGlitch shader, applied by a
@@ -11,6 +12,7 @@ public class CpuGlitchController : MonoBehaviour
 {
     public CPUManager cpuManager;
     public Material glitchMaterial;
+    public Shader uiGlitchShader;
     public float startCpu = 50f;
 
     static readonly int ScanLineJitterId = Shader.PropertyToID("_ScanLineJitter");
@@ -25,14 +27,21 @@ public class CpuGlitchController : MonoBehaviour
     float blockGateTimer;
     float blockGate;
     bool wasActive;
+    Material uiGlitchMaterial;
+    GameObject uiGlitchCanvas;
+    bool stopped;
 
     void Awake()
     {
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
+        BuildUiGlitchOverlay();
     }
 
     void OnEnable()
     {
+        stopped = false;
+        if (uiGlitchCanvas != null)
+            uiGlitchCanvas.SetActive(true);
         ResetMaterial();
     }
 
@@ -45,7 +54,7 @@ public class CpuGlitchController : MonoBehaviour
 
     void Update()
     {
-        if (glitchMaterial == null || cpuManager == null) return;
+        if (stopped || glitchMaterial == null || cpuManager == null) return;
 
         float t = Mathf.InverseLerp(startCpu, 100f, cpuManager.CurrentCpu);
         if (t <= 0f)
@@ -75,13 +84,15 @@ public class CpuGlitchController : MonoBehaviour
 
         float slDisp = 0.002f + Mathf.Pow(scan, 3f) * 0.035f;
         float slThresh = Mathf.Clamp01(1f - scan * 1.2f);
-        glitchMaterial.SetVector(ScanLineJitterId, new Vector4(slDisp, slThresh, 0f, 0f));
-        glitchMaterial.SetVector(VerticalJumpId, new Vector4(jump, verticalJumpTime, 0f, 0f));
-        glitchMaterial.SetFloat(HorizontalShakeId, shake);
-        glitchMaterial.SetVector(ColorDriftId, new Vector4(drift * 0.04f, Time.time * 606.11f, 0f, 0f));
-        glitchMaterial.SetFloat(BlockStrengthId, block * blockGate * 0.9f);
-        glitchMaterial.SetFloat(BlockSizeId, 32f);
-        glitchMaterial.SetFloat(SeedId, Random.value * 1000f);
+        Vector4 scanParams = new Vector4(slDisp, slThresh, 0f, 0f);
+        Vector4 jumpParams = new Vector4(jump, verticalJumpTime, 0f, 0f);
+        Vector4 driftParams = new Vector4(drift * 0.04f, Time.time * 606.11f, 0f, 0f);
+        float blockStrength = block * blockGate * 0.9f;
+        float seed = Random.value * 1000f;
+        ApplyParameters(glitchMaterial, scanParams, jumpParams, shake, driftParams,
+            blockStrength, seed);
+        ApplyParameters(uiGlitchMaterial, scanParams, jumpParams, shake, driftParams,
+            blockStrength, seed);
     }
 
     static float Ramp(float t, float start)
@@ -92,11 +103,78 @@ public class CpuGlitchController : MonoBehaviour
     void ResetMaterial()
     {
         wasActive = false;
-        if (glitchMaterial == null) return;
-        glitchMaterial.SetVector(ScanLineJitterId, new Vector4(0f, 1f, 0f, 0f));
-        glitchMaterial.SetVector(VerticalJumpId, Vector4.zero);
-        glitchMaterial.SetFloat(HorizontalShakeId, 0f);
-        glitchMaterial.SetVector(ColorDriftId, Vector4.zero);
-        glitchMaterial.SetFloat(BlockStrengthId, 0f);
+        ResetOneMaterial(glitchMaterial);
+        ResetOneMaterial(uiGlitchMaterial);
+    }
+
+    /// <summary>Leaves the final blue screen clean after the crash transition.</summary>
+    public void StopGlitch()
+    {
+        stopped = true;
+        ResetMaterial();
+        if (uiGlitchCanvas != null)
+            uiGlitchCanvas.SetActive(false);
+    }
+
+    void BuildUiGlitchOverlay()
+    {
+        if (uiGlitchShader == null)
+            uiGlitchShader = Shader.Find("CPU100/CpuGlitchUI");
+        if (uiGlitchShader == null) return;
+
+        uiGlitchMaterial = new Material(uiGlitchShader)
+        {
+            name = "CpuGlitchUI (Runtime)"
+        };
+
+        uiGlitchCanvas = new GameObject(
+            "CpuGlitchUIOverlay", typeof(RectTransform), typeof(Canvas));
+        Canvas canvas = uiGlitchCanvas.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 1500;
+
+        var imageGo = new GameObject("Glitch", typeof(RectTransform), typeof(Image));
+        RectTransform rect = (RectTransform)imageGo.transform;
+        rect.SetParent(uiGlitchCanvas.transform, false);
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        Image image = imageGo.GetComponent<Image>();
+        image.material = uiGlitchMaterial;
+        image.raycastTarget = false;
+    }
+
+    static void ApplyParameters(Material material, Vector4 scan, Vector4 jump,
+        float shake, Vector4 drift, float block, float seed)
+    {
+        if (material == null) return;
+        material.SetVector(ScanLineJitterId, scan);
+        material.SetVector(VerticalJumpId, jump);
+        material.SetFloat(HorizontalShakeId, shake);
+        material.SetVector(ColorDriftId, drift);
+        material.SetFloat(BlockStrengthId, block);
+        material.SetFloat(BlockSizeId, 32f);
+        material.SetFloat(SeedId, seed);
+    }
+
+    static void ResetOneMaterial(Material material)
+    {
+        if (material == null) return;
+        material.SetVector(ScanLineJitterId, new Vector4(0f, 1f, 0f, 0f));
+        material.SetVector(VerticalJumpId, Vector4.zero);
+        material.SetFloat(HorizontalShakeId, 0f);
+        material.SetVector(ColorDriftId, Vector4.zero);
+        material.SetFloat(BlockStrengthId, 0f);
+    }
+
+    void OnDestroy()
+    {
+        if (uiGlitchCanvas != null)
+            Destroy(uiGlitchCanvas);
+        if (uiGlitchMaterial != null)
+            Destroy(uiGlitchMaterial);
     }
 }

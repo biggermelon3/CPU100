@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CursorInteractor
   maxRadius: 2.5
   showRangeDebug: 1
-  ghostAlpha: 0.4
+  ghostAlpha: 0.85
   player: {fileID: 39169587846501384}
   installZone: {fileID: 5529772061047751608}
   worldCamera: {fileID: 0}
@@ -365,6 +365,10 @@ MonoBehaviour:
   glideFallSpeed: 2
   glideHorizontalMultiplier: 0.75
   glideGravityScale: 0.25
+  jumpSfx: {fileID: 8300000, guid: 33feed521604ecc4194074c1d81757f2, type: 3}
+  landingSfx: {fileID: 8300000, guid: f8dc9cf61ec93e641a111346dca5a70e, type: 3}
+  jumpSfxVolume: 0.45
+  landingSfxVolume: 0.8
   interference: {fileID: 0}
   cpuManager: {fileID: 0}
   gameState: {fileID: 0}
