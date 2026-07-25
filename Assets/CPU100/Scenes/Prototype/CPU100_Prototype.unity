@@ -359,6 +359,53 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3940964465611770199, guid: 0bf74f8f75157d6409823cd2672f3d78, type: 3}
   m_PrefabInstance: {fileID: 1594111180238402005}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &605538087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 605538088}
+  - component: {fileID: 605538089}
+  m_Layer: 0
+  m_Name: CpuGlitchController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &605538088
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 605538087}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8727912200687826010}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &605538089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 605538087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d7da3eeedd3e6547bd313acd8b81400, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CpuGlitchController
+  cpuManager: {fileID: 0}
+  glitchMaterial: {fileID: 2100000, guid: 76640505738a3fe47a3534a2609eafed, type: 2}
+  startCpu: 50
 --- !u!4 &642946014 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6687623257767561663, guid: d2405d7472518d7418785b4069e7b178, type: 3}
@@ -474,6 +521,56 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &939176241
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 939176242}
+  - component: {fileID: 939176243}
+  m_Layer: 0
+  m_Name: SoftwareTooltip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &939176242
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 939176241}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.46708, y: 1.46708, z: 1.46708}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1641122015}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -960.20386, y: -539.88544}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &939176243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 939176241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc2c30d7bb15c6a4ebcb0c8e6e207176, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoftwareTooltipUI
+  gameState: {fileID: 0}
+  width: 280
 --- !u!4 &1007802911 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8392909767296574990, guid: fc4b7c623b50e724b9cf9527ca557a7c, type: 3}
@@ -792,6 +889,7 @@ RectTransform:
   - {fileID: 488564867}
   - {fileID: 268803598}
   - {fileID: 1847554027}
+  - {fileID: 939176242}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2885,9 +2983,17 @@ PrefabInstance:
       objectReference: {fileID: 1032948309}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1719561493048527823, guid: c76ee42a99b5c2e4e97f5fd44c055942, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 605538088}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c76ee42a99b5c2e4e97f5fd44c055942, type: 3}
+--- !u!4 &8727912200687826010 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1719561493048527823, guid: c76ee42a99b5c2e4e97f5fd44c055942, type: 3}
+  m_PrefabInstance: {fileID: 8727912200687826009}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8968956573126999575
 PrefabInstance:
   m_ObjectHideFlags: 0

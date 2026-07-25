@@ -13,12 +13,15 @@ MonoBehaviour:
   m_Name: Browser
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Browser
+  description: Opens a temporary New Tab platform at the cursor. Stand on it before
+    the tab closes on its own.
   icon: {fileID: 4449056192509115828, guid: c3802a3346bd0bd429c9c31be4b5b1db, type: 3}
   abilityType: 1
   sideEffectType: 0
   startupCpuCost: 5
   runningCpuLoadPerSecond: 1.2
   closeCpuRelief: 6
+  usageCpuCost: 0
   cooldown: 4
   canUseRepeatedly: 1
   isSpecialSoftware: 0

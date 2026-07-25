@@ -5,7 +5,8 @@ using UnityEngine.UI;
 // One taskbar software slot. Single click selects, double click launches,
 // close button permanently deletes. Visuals fully re-render from inventory state
 // in Refresh(); Update polls only the cooldown fill (alloc-free).
-public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler
+// Hovering shows the SoftwareTooltipUI with description and CPU prices.
+public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     public Image iconImage;            // software icon (or placeholder), hidden when empty
     public Text nameText;
@@ -15,10 +16,12 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler
     public Button closeButton;         // active == occupied; onClick -> CloseAndDelete
 
     SoftwareInventory inventory;
+    SoftwareTooltipUI tooltip;
     int index = -1;
 
     void Awake()
     {
+        tooltip = FindFirstObjectByType<SoftwareTooltipUI>();
         // Fallback wiring by builder child names (see contract section 6).
         if (iconImage == null) iconImage = FindChild<Image>("IconImage");
         if (nameText == null) nameText = FindChild<Text>("NameText");
@@ -76,6 +79,10 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler
 
         if (closeButton != null)
             closeButton.gameObject.SetActive(occupied);
+
+        // Slot emptied while hovered (e.g. close button) -> drop the stale tooltip.
+        if (!occupied && tooltip != null)
+            tooltip.HideIfOwner(this);
     }
 
     void Update()
@@ -90,6 +97,18 @@ public class TaskbarSlotUI : MonoBehaviour, IPointerClickHandler
         if (inventory == null || index < 0) return;
         if (eventData.clickCount >= 2) inventory.TryLaunch(index);
         else inventory.Select(index);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        SoftwareRuntimeItem item = GetItem();
+        if (item != null && item.Data != null && tooltip != null)
+            tooltip.Show(this, item);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (tooltip != null) tooltip.HideIfOwner(this);
     }
 
     void HandleCloseClicked()

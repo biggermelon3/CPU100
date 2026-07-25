@@ -13,12 +13,14 @@ MonoBehaviour:
   m_Name: Hourglass
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Hourglass
+  description: Slows CPU growth for a few seconds. Buys time... with time.
   icon: {fileID: 6948327744988102790, guid: 5b84df3ec5c1ec14788607df185d9fb5, type: 3}
   abilityType: 7
   sideEffectType: 0
   startupCpuCost: 6
   runningCpuLoadPerSecond: 0.4
   closeCpuRelief: 6
+  usageCpuCost: 0
   cooldown: 12
   canUseRepeatedly: 1
   isSpecialSoftware: 0

@@ -51,6 +51,7 @@ MonoBehaviour:
   installZone: {fileID: 5529772061047751608}
   worldCamera: {fileID: 0}
   gameState: {fileID: 0}
+  taskbarUI: {fileID: 0}
 --- !u!1 &2116821670805226640
 GameObject:
   m_ObjectHideFlags: 0
@@ -249,6 +250,7 @@ GameObject:
   - component: {fileID: 39169587846501384}
   - component: {fileID: 8663693507451873255}
   - component: {fileID: 9183542412013848907}
+  - component: {fileID: 4804157724097923745}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -402,3 +404,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
   glitchBounds: {fileID: 0}
+--- !u!114 &4804157724097923745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8867042457250589685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66bf8d15ba7d26d4d8afe38ed5ac396f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerGlitchEffect
+  cpuManager: {fileID: 0}
+  visual: {fileID: 0}
+  startCpu: 50
+  maxOffset: 0.14

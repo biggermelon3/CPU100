@@ -66,6 +66,11 @@ public class DesktopIcon : MonoBehaviour
     public DesktopIconState State => state;
     public bool IsCorrupted => state == DesktopIconState.Corrupted;
     public Vector3 HomePosition => homePosition;
+    /// <summary>Current body sprite (for the install fly-in effect).</summary>
+    public Sprite BodySprite => bodyRenderer != null ? bodyRenderer.sprite : null;
+    /// <summary>World scale of the body renderer. Art sprites are huge at scale 1 and
+    /// rely on the Body child's tiny local scale, so effects must reuse this.</summary>
+    public Vector3 BodyWorldScale => bodyRenderer != null ? bodyRenderer.transform.lossyScale : Vector3.one;
 
     // ---------------- Unity lifecycle ----------------
 

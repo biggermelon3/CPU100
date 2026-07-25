@@ -20,6 +20,10 @@ public class SoftwareInventory : MonoBehaviour
     public SoftwareRuntimeItem[] Slots => slots;
     public int SelectedIndex => selectedIndex;
 
+    /// <summary>Slot index filled by the most recent successful TryInstall (-1 before any).
+    /// Read by CursorInteractor to aim the install fly-in effect.</summary>
+    public int LastInstalledIndex { get; private set; } = -1;
+
     public SoftwareRuntimeItem SelectedItem
     {
         get
@@ -90,6 +94,7 @@ public class SoftwareInventory : MonoBehaviour
             if (slots[i] == null)
             {
                 slots[i] = new SoftwareRuntimeItem(data);
+                LastInstalledIndex = i;
                 OnInventoryChanged?.Invoke();
                 return true;
             }

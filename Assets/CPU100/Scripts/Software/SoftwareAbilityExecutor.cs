@@ -87,6 +87,10 @@ public class SoftwareAbilityExecutor : MonoBehaviour
                 break;
         }
 
+        // Every ability use has an instant CPU price (shown in the taskbar tooltip).
+        if (cpuManager != null && item.Data.usageCpuCost > 0f)
+            cpuManager.AddCpu(item.Data.usageCpuCost);
+
         item.CooldownRemaining = item.Data.cooldown;
     }
 

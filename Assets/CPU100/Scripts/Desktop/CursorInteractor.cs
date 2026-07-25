@@ -18,6 +18,7 @@ public class CursorInteractor : MonoBehaviour
     public SoftwareInstallZone installZone;   // fallback FindFirstObjectByType
     public Camera worldCamera;                // fallback Camera.main
     public GameStateManager gameState;        // fallback find
+    public SoftwareTaskbarUI taskbarUI;       // fallback find; small-cursor priority + fly-in target
 
     public Vector2 CursorWorldPos { get; private set; }
     public Vector2 PointerWorldPos { get; private set; }
@@ -34,6 +35,7 @@ public class CursorInteractor : MonoBehaviour
     UnityEngine.UI.Image ghostImage;
     bool osCursorHidden;
     bool mouseInsideRadius = true;
+    bool overTaskbar;
     Vector2 lastScreenPos;
     ContactFilter2D overlapFilter;
     readonly Collider2D[] overlapBuffer = new Collider2D[16];
@@ -45,6 +47,7 @@ public class CursorInteractor : MonoBehaviour
         if (installZone == null) installZone = FindFirstObjectByType<SoftwareInstallZone>();
         if (worldCamera == null) worldCamera = Camera.main;
         if (gameState == null) gameState = FindFirstObjectByType<GameStateManager>();
+        if (taskbarUI == null) taskbarUI = FindFirstObjectByType<SoftwareTaskbarUI>();
 
         overlapFilter = ContactFilter2D.noFilter;
         overlapFilter.useTriggers = true; // any layer, triggers included
@@ -111,6 +114,7 @@ public class CursorInteractor : MonoBehaviour
 
         SetOsCursorHidden(true);
         UpdateCursorPosition(mouse);
+        UpdateOverTaskbar();
         UpdateCursorVisuals();
         UpdateGhost();
 
@@ -187,6 +191,18 @@ public class CursorInteractor : MonoBehaviour
         CursorWorldPos = world;
     }
 
+    // The taskbar is UI: even inside the interaction ring the SMALL cursor takes
+    // priority there, because clicks go to the slots, not the world. Dragging an
+    // icon keeps the big cursor so the carried item stays readable.
+    void UpdateOverTaskbar()
+    {
+        RectTransform tbRect = taskbarUI != null ? taskbarUI.transform as RectTransform : null;
+        overTaskbar = tbRect != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(tbRect, lastScreenPos);
+    }
+
+    bool SmallCursorPriority { get { return overTaskbar && draggedIcon == null; } }
+
     void SetOsCursorHidden(bool hidden)
     {
         if (osCursorHidden == hidden) return;
@@ -225,7 +241,7 @@ public class CursorInteractor : MonoBehaviour
         EnsureGhost();
         if (ghostCursor == null) return;
 
-        bool show = !mouseInsideRadius;
+        bool show = !mouseInsideRadius || SmallCursorPriority;
         if (ghostCursor.gameObject.activeSelf != show)
             ghostCursor.gameObject.SetActive(show);
         // Overlay-canvas RectTransform.position is in screen pixels.
@@ -235,11 +251,12 @@ public class CursorInteractor : MonoBehaviour
     void UpdateCursorVisuals()
     {
         // Exactly one custom cursor is visible: the large world cursor inside
-        // the interaction radius, or the small UI cursor outside it.
+        // the interaction radius, or the small UI cursor outside it / over the taskbar.
+        bool showWorldCursor = mouseInsideRadius && !SmallCursorPriority;
         if (cursorSprite != null &&
-            cursorSprite.gameObject.activeSelf != mouseInsideRadius)
+            cursorSprite.gameObject.activeSelf != showWorldCursor)
         {
-            cursorSprite.gameObject.SetActive(mouseInsideRadius);
+            cursorSprite.gameObject.SetActive(showWorldCursor);
         }
     }
 
@@ -306,6 +323,7 @@ public class CursorInteractor : MonoBehaviour
         {
             installed = installZone.TryInstall(icon);
         }
+        if (installed) TriggerInstallFlyEffect(icon); // before EndDrag hides the icon
         icon.EndDrag(installed);
 
         // A repositioned folder behaves like a desktop item after mouse-up:
@@ -317,6 +335,18 @@ public class CursorInteractor : MonoBehaviour
             icon.SetState(DesktopIconState.Selected);
             selectedIcon = icon;
         }
+    }
+
+    // Shrinking icon + trail flying from the drop position into the taskbar slot
+    // that just received the software.
+    void TriggerInstallFlyEffect(DesktopIcon icon)
+    {
+        if (installZone == null || installZone.inventory == null || taskbarUI == null) return;
+        int index = installZone.inventory.LastInstalledIndex;
+        TaskbarSlotUI[] slots = taskbarUI.slots;
+        if (index < 0 || slots == null || index >= slots.Length || slots[index] == null) return;
+        InstallFlyEffect.Play(icon.BodySprite, icon.BodyWorldScale, icon.transform.position,
+            slots[index].transform as RectTransform, worldCamera);
     }
 
     void ClearSelection()

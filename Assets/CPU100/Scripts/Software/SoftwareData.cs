@@ -26,6 +26,7 @@ public enum SoftwareState { World, Installed, Running, Corrupted, Deleted }
 public class SoftwareData : ScriptableObject
 {
     public string softwareName;
+    [TextArea] public string description;     // shown in the taskbar hover tooltip
     public Sprite icon;                       // null → UI falls back to placeholder Software icon
     public SoftwareAbilityType abilityType;
     public SoftwareSideEffectType sideEffectType;
@@ -33,6 +34,7 @@ public class SoftwareData : ScriptableObject
     public float startupCpuCost;
     public float runningCpuLoadPerSecond;
     public float closeCpuRelief;
+    public float usageCpuCost;                // instant CPU added each time the ability fires (E)
     public float cooldown;
 
     public bool canUseRepeatedly = true;

@@ -13,12 +13,15 @@ MonoBehaviour:
   m_Name: PaperPlane
   m_EditorClassIdentifier: Assembly-CSharp::SoftwareData
   softwareName: Paper Plane
+  description: Dash toward the cursor, then glide down. Only left/right steering while
+    gliding. Land or press Space to fold up.
   icon: {fileID: 7028578073694648011, guid: a573f1f764f77644aad1019af5a451f2, type: 3}
   abilityType: 2
   sideEffectType: 0
   startupCpuCost: 12
   runningCpuLoadPerSecond: 1.2
   closeCpuRelief: 12
+  usageCpuCost: 0
   cooldown: 2.5
   canUseRepeatedly: 1
   isSpecialSoftware: 0
