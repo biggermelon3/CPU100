@@ -40,8 +40,11 @@ public class CpuGlitchController : MonoBehaviour
     void OnEnable()
     {
         stopped = false;
+        // Hidden until the CPU crosses startCpu: the UI glitch shader is never fully
+        // transparent with default-zero uniforms, so an always-on overlay shows
+        // faint scanlines even at 0% CPU.
         if (uiGlitchCanvas != null)
-            uiGlitchCanvas.SetActive(true);
+            uiGlitchCanvas.SetActive(false);
         ResetMaterial();
     }
 
@@ -60,9 +63,13 @@ public class CpuGlitchController : MonoBehaviour
         if (t <= 0f)
         {
             if (wasActive) ResetMaterial();
+            if (uiGlitchCanvas != null && uiGlitchCanvas.activeSelf)
+                uiGlitchCanvas.SetActive(false);
             return;
         }
         wasActive = true;
+        if (uiGlitchCanvas != null && !uiGlitchCanvas.activeSelf)
+            uiGlitchCanvas.SetActive(true);
 
         // Staggered stack: each Ramp stays 0 until its own threshold, so higher CPU
         // literally means MORE distinct effects, not just stronger ones.

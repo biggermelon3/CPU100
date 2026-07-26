@@ -92,9 +92,9 @@ public class CursorInteractor : MonoBehaviour
 
     void Update()
     {
-        if (gameState != null && gameState.State != GameState.Playing)
+        if ((gameState != null && gameState.State != GameState.Playing) || TutorialManager.PopupOpen)
         {
-            // Result screens need the OS cursor back for the restart buttons.
+            // Result screens and tutorial popups need the OS cursor back for their buttons.
             SetOsCursorHidden(false);
             if (ghostCursor != null && ghostCursor.gameObject.activeSelf)
                 ghostCursor.gameObject.SetActive(false);

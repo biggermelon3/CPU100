@@ -52,6 +52,7 @@ public class SoftwareAbilityExecutor : MonoBehaviour
 
         // Gate chain: game must be running and input not interference-blocked.
         if (gameState != null && gameState.State != GameState.Playing) return;
+        if (TutorialManager.PopupOpen) return;
         if (interference != null && interference.InputBlocked) return;
         if (inventory == null) return;
         if (player != null && player.AbilityMovementLocked) return;

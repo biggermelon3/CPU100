@@ -92,7 +92,7 @@ public class PlayerController2D : MonoBehaviour
         if (transform.position.y < fallKillY)
             Respawn();
 
-        bool blocked = interference != null && interference.InputBlocked;
+        bool blocked = (interference != null && interference.InputBlocked) || TutorialManager.PopupOpen;
         bool reversed = interference != null && interference.InputReversed;
 
         float h = 0f;

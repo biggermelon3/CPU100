@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // Win / fail result screens (UI GO "ResultUI" under Canvas). Both panels start
@@ -32,8 +33,38 @@ public class GameResultUI : MonoBehaviour
     void Start()
     {
         HideAll();
+        // Clone menu buttons BEFORE wiring the restart listeners: runtime listeners
+        // are not serialized, so the clones start with clean onClick events.
+        TryAddMenuButton(restartButtonBlue);
+        TryAddMenuButton(restartButtonWin);
         if (restartButtonBlue != null) restartButtonBlue.onClick.AddListener(HandleRestartClicked);
         if (restartButtonWin != null) restartButtonWin.onClick.AddListener(HandleRestartClicked);
+    }
+
+    // Adds a "MAIN MENU" button below the given restart button (skipped when no
+    // MainMenu scene is available, e.g. a level launched directly in the editor).
+    void TryAddMenuButton(Button restartButton)
+    {
+        if (restartButton == null) return;
+        if (!Application.CanStreamedLevelBeLoaded("MainMenu")) return;
+
+        Button menuButton = Instantiate(restartButton, restartButton.transform.parent);
+        menuButton.name = restartButton.name + "_Menu";
+        RectTransform rt = (RectTransform)menuButton.transform;
+        RectTransform src = (RectTransform)restartButton.transform;
+        rt.anchoredPosition = src.anchoredPosition + new Vector2(0f, -(src.sizeDelta.y + 14f));
+
+        Text label = menuButton.GetComponentInChildren<Text>(true);
+        if (label != null) label.text = "MAIN MENU";
+
+        menuButton.onClick.RemoveAllListeners();
+        menuButton.onClick.AddListener(HandleMenuClicked);
+    }
+
+    void HandleMenuClicked()
+    {
+        Time.timeScale = 1f; // safety: never carry a paused clock into the menu
+        SceneManager.LoadScene("MainMenu");
     }
 
     public void ShowBlueScreen()
