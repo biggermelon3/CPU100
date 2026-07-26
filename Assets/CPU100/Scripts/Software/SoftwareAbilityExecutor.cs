@@ -15,12 +15,15 @@ public class SoftwareAbilityExecutor : MonoBehaviour
     public InputInterferenceController interference;
     public CPUManager cpuManager;
     public Transform temporaryIconsParent;
+    public AudioClip useAbilitySfx;
+    [Range(0f, 1f)] public float useAbilitySfxVolume = 0.8f;
 
     public float tempIconLifetime = 5f;
     public float shieldDuration = 5f;
     public float hourglassDuration = 5f;
     [Range(0f, 1f)] public float hourglassGrowthMultiplier = 0.3f;
     PlayerAnimationController playerAnimation;
+    AudioSource abilityAudioSource;
 
     private void Awake()
     {
@@ -31,6 +34,12 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         if (interference == null) interference = FindFirstObjectByType<InputInterferenceController>();
         if (cpuManager == null) cpuManager = FindFirstObjectByType<CPUManager>();
         if (player != null) playerAnimation = player.GetComponent<PlayerAnimationController>();
+
+        abilityAudioSource = GetComponent<AudioSource>();
+        if (abilityAudioSource == null) abilityAudioSource = gameObject.AddComponent<AudioSource>();
+        abilityAudioSource.playOnAwake = false;
+        abilityAudioSource.loop = false;
+        abilityAudioSource.spatialBlend = 0f;
     }
 
     private void Start()
@@ -61,12 +70,14 @@ public class SoftwareAbilityExecutor : MonoBehaviour
         if (item == null || !item.IsRunning || item.CooldownRemaining > 0f) return;
         if (item.Data == null) return;
 
+        bool activeAbilityUsed = false;
         switch (item.Data.abilityType)
         {
             case SoftwareAbilityType.SpawnTemporaryIcon:
                 if (cursor == null || !cursor.CanInteractWithWorld)
                     return;
                 SpawnTemporaryIcon();
+                activeAbilityUsed = true;
                 break;
 
             case SoftwareAbilityType.AirDash:
@@ -74,22 +85,28 @@ public class SoftwareAbilityExecutor : MonoBehaviour
                 if (player == null || cursor == null)
                     return;
                 player.AirDashTowards(cursor.PointerWorldPos);
+                activeAbilityUsed = true;
                 break;
 
             case SoftwareAbilityType.ShieldPush:
                 if (cpuManager == null) return;
                 cpuManager.SetTemporaryValueAndFreeze(5f, shieldDuration);
+                activeAbilityUsed = true;
                 break;
 
             case SoftwareAbilityType.CpuSlowdown:
                 if (cpuManager == null) return;
                 cpuManager.ActivateGrowthSlowdown(hourglassDuration, hourglassGrowthMultiplier);
+                activeAbilityUsed = true;
                 break;
 
             default:
                 // None / Accelerator: no active effect.
                 break;
         }
+
+        if (activeAbilityUsed && abilityAudioSource != null && useAbilitySfx != null)
+            abilityAudioSource.PlayOneShot(useAbilitySfx, useAbilitySfxVolume);
 
         // Every ability use has an instant CPU price (shown in the taskbar tooltip).
         if (cpuManager != null && item.Data.usageCpuCost > 0f)
@@ -117,6 +134,15 @@ public class SoftwareAbilityExecutor : MonoBehaviour
 
         DesktopIcon icon = DesktopIcon.CreateRuntimeIcon(
             "New Tab.url", DesktopIconType.Shortcut, pos, temporaryIconsParent, true, true);
-        if (icon != null) icon.ScheduleExpire(tempIconLifetime);
+        if (icon != null)
+        {
+            // Keep the temporary platform collider slightly below the icon visual so
+            // the player is less likely to catch its side while trying to jump on it.
+            BoxCollider2D platformCollider = icon.GetComponent<BoxCollider2D>();
+            if (platformCollider != null)
+                platformCollider.offset = new Vector2(platformCollider.offset.x, -0.15f);
+
+            icon.ScheduleExpire(tempIconLifetime);
+        }
     }
 }

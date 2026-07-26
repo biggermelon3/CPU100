@@ -517,6 +517,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: Folder
   iconSprite: {fileID: -451243041543395051, guid: 9a51d57481792534d974b874e2de8c2b, type: 3}
+  boosterSprite: {fileID: 0}
+  boosterFlameSprite: {fileID: 0}
   iconType: 0
   isPlatform: 1
   canDrag: 1

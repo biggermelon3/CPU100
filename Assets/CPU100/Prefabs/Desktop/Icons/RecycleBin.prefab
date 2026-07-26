@@ -207,7 +207,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 0.08417509, y: 0.08417509, z: 0.08417509}
+  m_LocalScale: {x: 0.08417508, y: 0.08417508, z: 0.08417508}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8392909767296574990}
@@ -267,7 +267,7 @@ SpriteRenderer:
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1 &5836069179824744534
@@ -607,6 +607,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: Recycle Bin
   iconSprite: {fileID: 5957287065099190412, guid: ba8c3fb40dc96784b8eab64be7940d08, type: 3}
+  boosterSprite: {fileID: 0}
+  boosterFlameSprite: {fileID: 0}
   iconType: 6
   isPlatform: 1
   canDrag: 0

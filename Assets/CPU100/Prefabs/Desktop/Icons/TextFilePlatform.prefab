@@ -144,6 +144,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DesktopIcon
   iconName: Empty File
   iconSprite: {fileID: -8141039424203452306, guid: 502df70107b684a42b5a3eb31a928d16, type: 3}
+  boosterSprite: {fileID: 0}
+  boosterFlameSprite: {fileID: 0}
   iconType: 1
   isPlatform: 1
   canDrag: 0

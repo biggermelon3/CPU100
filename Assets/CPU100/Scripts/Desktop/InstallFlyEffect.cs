@@ -17,25 +17,46 @@ public class InstallFlyEffect : MonoBehaviour
     Image iconImage;
     InstallTrailGraphic trail;
 
-    public static void Play(Sprite sprite, Vector3 startScale, Vector3 fromWorld,
-        RectTransform targetSlot, Camera cam)
+    public static void Play(Sprite sprite, Bounds worldBounds, RectTransform targetSlot, Camera cam)
     {
         if (sprite == null || targetSlot == null) return;
         if (cam == null) cam = Camera.main;
         if (cam == null) return;
 
-        Vector2 fromScreen = cam.WorldToScreenPoint(fromWorld);
+        Vector2 fromScreen = cam.WorldToScreenPoint(worldBounds.center);
         Vector2 toScreen = targetSlot.position;
 
-        // Match the world-space icon's current on-screen dimensions before shrinking.
-        Vector3 spriteSize = sprite.bounds.size;
-        Vector3 rightEdge = cam.WorldToScreenPoint(
-            fromWorld + Vector3.right * spriteSize.x * Mathf.Abs(startScale.x));
-        Vector3 topEdge = cam.WorldToScreenPoint(
-            fromWorld + Vector3.up * spriteSize.y * Mathf.Abs(startScale.y));
-        Vector2 screenSize = new Vector2(
-            Mathf.Max(8f, Mathf.Abs(rightEdge.x - fromScreen.x)),
-            Mathf.Max(8f, Mathf.Abs(topEdge.y - fromScreen.y)));
+        // Project the renderer's actual bounds instead of rebuilding them from the
+        // sprite and lossyScale. This stays correct across build resolutions,
+        // authored child offsets and parent transforms.
+        Vector3 min = worldBounds.min;
+        Vector3 max = worldBounds.max;
+        Vector3[] corners =
+        {
+            cam.WorldToScreenPoint(new Vector3(min.x, min.y, worldBounds.center.z)),
+            cam.WorldToScreenPoint(new Vector3(min.x, max.y, worldBounds.center.z)),
+            cam.WorldToScreenPoint(new Vector3(max.x, min.y, worldBounds.center.z)),
+            cam.WorldToScreenPoint(new Vector3(max.x, max.y, worldBounds.center.z))
+        };
+
+        float minX = corners[0].x;
+        float maxX = corners[0].x;
+        float minY = corners[0].y;
+        float maxY = corners[0].y;
+        for (int i = 1; i < corners.Length; i++)
+        {
+            minX = Mathf.Min(minX, corners[i].x);
+            maxX = Mathf.Max(maxX, corners[i].x);
+            minY = Mathf.Min(minY, corners[i].y);
+            maxY = Mathf.Max(maxY, corners[i].y);
+        }
+
+        Vector2 screenSize = new Vector2(maxX - minX, maxY - minY);
+        float aspect = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
+        if (screenSize.y < 24f)
+            screenSize.y = Mathf.Max(24f, screenSize.x / aspect);
+        if (screenSize.x < 24f)
+            screenSize.x = Mathf.Max(24f, screenSize.y * aspect);
 
         var go = new GameObject("InstallFlyFX", typeof(RectTransform), typeof(Canvas));
         Canvas canvas = go.GetComponent<Canvas>();

@@ -73,6 +73,10 @@ public class DesktopIcon : MonoBehaviour
     public Vector3 HomePosition => homePosition;
     /// <summary>Current body sprite (for the install fly-in effect).</summary>
     public Sprite BodySprite => bodyRenderer != null ? bodyRenderer.sprite : null;
+    /// <summary>Rendered world-space bounds of the body, including authored scale and offset.</summary>
+    public Bounds BodyWorldBounds => bodyRenderer != null
+        ? bodyRenderer.bounds
+        : new Bounds(transform.position, Vector3.one);
     /// <summary>World scale of the body renderer. Art sprites are huge at scale 1 and
     /// rely on the Body child's tiny local scale, so effects must reuse this.</summary>
     public Vector3 BodyWorldScale => bodyRenderer != null ? bodyRenderer.transform.lossyScale : Vector3.one;

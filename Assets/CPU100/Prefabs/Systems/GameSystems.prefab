@@ -295,6 +295,8 @@ MonoBehaviour:
   interference: {fileID: 8341010057716192483}
   cpuManager: {fileID: 256419341059262600}
   temporaryIconsParent: {fileID: 0}
+  useAbilitySfx: {fileID: 8300000, guid: 999174d105f3cab47a8ee12ac6864f24, type: 3}
+  useAbilitySfxVolume: 0.8
   tempIconLifetime: 5
   shieldDuration: 5
   hourglassDuration: 5

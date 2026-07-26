@@ -46,6 +46,7 @@ public class MainMenuUI : MonoBehaviour
     void Awake()
     {
         FindMissingRefs();
+        EnsureScrollingTitle();
 
         volume = PlayerPrefs.GetFloat(VolumePref, 0.8f);
         muted = PlayerPrefs.GetInt(MutePref, 0) == 1;
@@ -78,6 +79,17 @@ public class MainMenuUI : MonoBehaviour
         }
         RefreshMuteLabel();
         if (levelPanel != null) levelPanel.SetActive(false);
+    }
+
+    void EnsureScrollingTitle()
+    {
+        Transform screen = FindRecursive(transform, "Screen");
+        if (screen == null) return;
+
+        MainMenuScrollingTitle scrollingTitle = screen.GetComponent<MainMenuScrollingTitle>();
+        if (scrollingTitle == null)
+            scrollingTitle = screen.gameObject.AddComponent<MainMenuScrollingTitle>();
+        scrollingTitle.EnsureVisuals();
     }
 
     void FindMissingRefs()

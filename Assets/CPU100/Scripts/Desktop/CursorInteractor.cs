@@ -348,7 +348,7 @@ public class CursorInteractor : MonoBehaviour
         int index = installZone.inventory.LastInstalledIndex;
         TaskbarSlotUI[] slots = taskbarUI.slots;
         if (index < 0 || slots == null || index >= slots.Length || slots[index] == null) return;
-        InstallFlyEffect.Play(icon.BodySprite, icon.BodyWorldScale, icon.transform.position,
+        InstallFlyEffect.Play(icon.BodySprite, icon.BodyWorldBounds,
             slots[index].transform as RectTransform, worldCamera);
     }
 
