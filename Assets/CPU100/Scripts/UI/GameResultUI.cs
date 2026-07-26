@@ -30,15 +30,59 @@ public class GameResultUI : MonoBehaviour
         FixFonts(victoryPanel);
     }
 
+    // Campaign order for the victory screen's NEXT LEVEL button.
+    static readonly string[] LevelSequence = { "Lvl_01", "Lvl_02", "Lvl_03" };
+
     void Start()
     {
         HideAll();
-        // Clone menu buttons BEFORE wiring the restart listeners: runtime listeners
+        // Clone extra buttons BEFORE wiring the restart listeners: runtime listeners
         // are not serialized, so the clones start with clean onClick events.
+        TryAddNextLevelButton();
         TryAddMenuButton(restartButtonBlue);
         TryAddMenuButton(restartButtonWin);
         if (restartButtonBlue != null) restartButtonBlue.onClick.AddListener(HandleRestartClicked);
         if (restartButtonWin != null) restartButtonWin.onClick.AddListener(HandleRestartClicked);
+    }
+
+    /// <summary>Name of the level after the active one, or null on the last level
+    /// (and on scenes outside the campaign, e.g. the prototype).</summary>
+    static string NextLevelName()
+    {
+        string current = SceneManager.GetActiveScene().name;
+        for (int i = 0; i < LevelSequence.Length - 1; i++)
+        {
+            if (LevelSequence[i] == current) return LevelSequence[i + 1];
+        }
+        return null;
+    }
+
+    // Victory only: a NEXT LEVEL button above the restart button, chaining
+    // Lvl_01 -> Lvl_02 -> Lvl_03. The last level offers no next.
+    void TryAddNextLevelButton()
+    {
+        if (restartButtonWin == null) return;
+        string next = NextLevelName();
+        if (string.IsNullOrEmpty(next) || !Application.CanStreamedLevelBeLoaded(next)) return;
+
+        Button nextButton = Instantiate(restartButtonWin, restartButtonWin.transform.parent);
+        nextButton.name = "NextLevelButton";
+        RectTransform rt = (RectTransform)nextButton.transform;
+        RectTransform src = (RectTransform)restartButtonWin.transform;
+        rt.anchoredPosition = src.anchoredPosition + new Vector2(0f, src.sizeDelta.y + 14f);
+
+        Text label = nextButton.GetComponentInChildren<Text>(true);
+        if (label != null) label.text = "NEXT LEVEL";
+
+        nextButton.onClick.RemoveAllListeners();
+        nextButton.onClick.AddListener(HandleNextLevelClicked);
+    }
+
+    void HandleNextLevelClicked()
+    {
+        Time.timeScale = 1f; // safety: never carry a paused clock into the next level
+        string next = NextLevelName();
+        if (!string.IsNullOrEmpty(next)) SceneManager.LoadScene(next);
     }
 
     // Adds a "MAIN MENU" button below the given restart button (skipped when no
