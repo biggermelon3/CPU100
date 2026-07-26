@@ -39,6 +39,7 @@ public class GameResultUI : MonoBehaviour
         // Clone extra buttons BEFORE wiring the restart listeners: runtime listeners
         // are not serialized, so the clones start with clean onClick events.
         TryAddNextLevelButton();
+        TryAddCreditsButton();
         TryAddMenuButton(restartButtonBlue);
         TryAddMenuButton(restartButtonWin);
         if (restartButtonBlue != null) restartButtonBlue.onClick.AddListener(HandleRestartClicked);
@@ -83,6 +84,32 @@ public class GameResultUI : MonoBehaviour
         Time.timeScale = 1f; // safety: never carry a paused clock into the next level
         string next = NextLevelName();
         if (!string.IsNullOrEmpty(next)) SceneManager.LoadScene(next);
+    }
+
+    // The final victory screen gets a dedicated Credits entry above Restart.
+    void TryAddCreditsButton()
+    {
+        if (restartButtonWin == null) return;
+        if (SceneManager.GetActiveScene().name != "Lvl_03") return;
+        if (!Application.CanStreamedLevelBeLoaded("Credits")) return;
+
+        Button creditsButton = Instantiate(restartButtonWin, restartButtonWin.transform.parent);
+        creditsButton.name = "CreditsButton";
+        RectTransform rt = (RectTransform)creditsButton.transform;
+        RectTransform src = (RectTransform)restartButtonWin.transform;
+        rt.anchoredPosition = src.anchoredPosition + new Vector2(0f, src.sizeDelta.y + 14f);
+
+        Text label = creditsButton.GetComponentInChildren<Text>(true);
+        if (label != null) label.text = "CREDITS";
+
+        creditsButton.onClick.RemoveAllListeners();
+        creditsButton.onClick.AddListener(HandleCreditsClicked);
+    }
+
+    void HandleCreditsClicked()
+    {
+        Time.timeScale = 1f;
+        SceneFadeLoader.LoadScene("Credits", 0.75f);
     }
 
     // Adds a "MAIN MENU" button below the given restart button (skipped when no
